@@ -5,7 +5,7 @@ clear;
 clc;
 
 % Adding all required pathways for functions 
-pathway_all_functions = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
+pathway_all_functions = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools\Scripts For Testing_Debugging";
 addpath(pathway_all_functions)
 % file that contains all the functions 
 funcs = functionsContainer; 
