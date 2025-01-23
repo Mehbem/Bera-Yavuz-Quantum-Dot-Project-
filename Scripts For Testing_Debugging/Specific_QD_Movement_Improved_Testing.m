@@ -28,7 +28,7 @@ PhotoType = "SteppingPhoto";
 fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20");
 fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20");
 pause(0.3)
-[StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return);
+[StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,40);
 % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 % calculating number of rows and column alongside direction needed to travel to inquired QD 
@@ -121,6 +121,14 @@ Frequency_fast_travel = 30; %whatever frequency we choose for fast travel essent
 Y_Step_num = 90;
 X_Step_num = 73;
 
+% additional step number to increase error margin for pause
+error_margin_time = 6; % extra time paused = error_margin_time / frequency
+
+% acceptable error margin (pixel distance from dot) for precision locking 
+fast_movement_margin = 80; 
+locking_on_margin = 40;
+final_locking_on_margin = 25; 
+
 % defining the commands depending on the direction being moved 
 row_exist  = exist('direction_row', 'var');
 column_exist = exist('direction_column', 'var');
@@ -149,15 +157,17 @@ for column = 1: num_of_breaks_column
     % Moving to the next set of QD along column
     QD_counter = QD_counter + groups_of_dots_column*column_interval; 
     % Respective voltage and frequency values (Voltage: 1-20 V Frequency: 1-1000 Hz)
-    fprintf(ANC300,"setv 1 30"); fprintf(ANC300,"setf 1 30"); 
+    fprintf(ANC300,"setv 1 30"); 
+    fprintf(ANC300,"setf 1 30"); 
     pause(0.3)
     fprintf(ANC300,X_Serial_Comd);
-    MyFuncs.StepQueue(X_Step_num,Frequency_fast_travel); 
+    MyFuncs.StepQueue(X_Step_num+error_margin_time,Frequency_fast_travel); 
 
     % Making sure LED is exactly on the dot 
-    fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20");
+    fprintf(ANC300,"setv 1 12"); 
+    fprintf(ANC300,"setf 1 20");
     pause(0.3)
-    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return); % trying to land on the exact dot 
+    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,fast_movement_margin); % trying to land on the exact dot 
 
 end
 
@@ -172,7 +182,7 @@ for column_remaining = 1: remaining_QD_column
     
     % Making sure LED is exactly on the dot 
     MyFuncs.QD_tracking_N_IdentificationVer2(QD_counter,"Auto","Write","LAB",direction_column); 
-    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return); % trying to land on the exact dot 
+    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,locking_on_margin); % trying to land on the exact dot 
 end
 
 % fast tracking along the QDs row
@@ -181,15 +191,17 @@ for row = 1:num_of_breaks_row
     % Moving to the next set of QD along row
     QD_counter = QD_counter + groups_of_dots_row*row_interval; 
     % Respective voltage and frequency values (Voltage: 1-20 V Frequency: 1-1000 Hz)
-    fprintf(ANC300,"setv 2 30"); fprintf(ANC300,"setf 2 30"); 
+    fprintf(ANC300,"setv 2 30"); 
+    fprintf(ANC300,"setf 2 30"); 
     pause(0.3)
     fprintf(ANC300,Y_Serial_Comd);
-    MyFuncs.StepQueue(Y_Step_num,Frequency_fast_travel); 
+    MyFuncs.StepQueue(Y_Step_num+error_margin_time,Frequency_fast_travel); 
 
     % Making sure LED is exactly on the dot 
-    fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20"); 
+    fprintf(ANC300,"setv 2 12"); 
+    fprintf(ANC300,"setf 2 20"); 
     pause(0.3)
-    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return); % trying to land on the exact dot 
+    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,fast_movement_margin); % trying to land on the exact dot 
  
 end
 
@@ -204,8 +216,11 @@ for row_remaining = 1: remaining_QD_row
     
     % Making sure LED is exactly on the dot 
     MyFuncs.QD_tracking_N_IdentificationVer2(QD_counter,"Auto","Write","LAB",direction_row); 
-    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,40); % trying to land on the exact dot 
+    [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,locking_on_margin); % trying to land on the exact dot 
 end
+
+% final check to make sure exactly on dot 
+MyFuncs.OptimizedRasterScan(StartingQD, Table_FullQDList_sorted, Rotated_Table_FullQDList_sorted,direction_row,final_locking_on_margin)
 
 pyrun_file_text_Spec = sprintf('QD_Spec_Plot_[%d %d]',InquiredQD);
 py.asi_func.snap_image(asi_initialization_return, pyrun_file_text_Spec)

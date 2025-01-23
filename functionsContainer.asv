@@ -2846,7 +2846,8 @@ classdef functionsContainer
             % Inputs:
                 % setting_updated - which setting the user wants to chance
                 % setting_value - what the selected setting is being set to
-                % InputSource - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
+                % InputSource - specifies if the input was automatically put or if the user manually put QD position (valid inputs: "Auto" or "Manual") 
+                % Action - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
                 % Device - specifies what device user is using in order to access specific QD history file (valid inputs: "HOME_PC", "LAB")
             % Outputs:
                 % read_fast_movement_setting -  reads setting for each respective thing 
@@ -2863,87 +2864,27 @@ classdef functionsContainer
            elseif Device == "HOME_PC"
            filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName);
            elseif Device == "MAC"
-           filenameLAB = "/Users/bera_yavuz/Desktop/Testing dumb thing folder/Fast_Movement_Settings.txt";
+           filenameLAB = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/QD_History.txt";
            else
                fprintf("invalid Device name try again")
             end
 
 
-             if Device == "LAB" 
-            filename = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\XY_Factor_Images\XY_Factor_History.txt";
-            elseif Device == "HOME_PC"
-            filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\XY_Factor_History.txt"; 
-            else
-                fprintf("invalid Device name try again")
-            end
-    
-
-            switch InputSource 
-
-                case "Write" 
-                fileID = fopen(filename, 'a+');
-                % Check if the file opened successfully
-                if fileID == -1
-                    error('Failed to open the file.');
+                   % Iterate over the fields in setting_updated
+            for i = 1:numel(setting_updated)
+                field_name = setting_updated(i); % Get the current field name
+                
+                % Check if the field exists in setting_value
+                if isfield(setting_value, field_name)
+                    fprintf('Field "%s" exists in setting_value.\n', field_name);
+                else
+                    % If the field doesn't exist, create it with a default value
+                    fprintf('Field "%s" does not exist. Creating it with a default value of 0.\n', field_name);
+                    setting_value.(field_name) = 0;
                 end
-
-                % Get the current timestamp
-                currentDateTime = datetime('now');
-                currentDateTimeText = string(currentDateTime);
-               
-                % Write the timestamp and information to the file
-                fprintf(fileID, '%s\n================================================\nCurrent Fast Movement X Step: %s\nnCurrent Fast Movement Y Step: %s\n\n\n', currentDateTimeText,XY_factor);
-
-                
-                case "Read"
-                fileID = fopen(filename, 'rt');
-                if fileID == -1
-                    error('Failed to open the file.');
-                end
-                
-                % Read the entire file into a single string
-                fileContent = fread(fileID, '*char')';
-                
-                % Split the content into lines
-                lines = strsplit(fileContent, newline);
-                
-                % Initialize variables to store the last three non-empty lines
-                lastLine = '';
-                secondLastLine = '';
-               
-                
-                nonEmptyCount = 0;  % Counter for non-empty lines
-                
-                % Loop through the lines in reverse order
-                for i = length(lines):-1:1
-                    if ~isempty(strtrim(lines{i}))
-                        nonEmptyCount = nonEmptyCount + 1;
-                        if nonEmptyCount == 1
-                            lastLine = lines{i};
-                        elseif nonEmptyCount == 2
-                            secondLastLine = lines{i};
-                              % Stop after finding the second-to-last non-empty line
-                        end
-                    end
-                    % Split the string into words
-                    words = strsplit(lastLine);
-                    % Extract the last word
-                    Y_Factor = words{end};
-                    % Split the string into words
-                    words = strsplit(secondLastLine);
-                    % Extract the last word
-                    X_Factor = words{end};
-                end
-                
-                % Convert the last and third-to-last lines to numbers
-                Read_XY_factor = struct("X_factor",str2num(X_Factor),"Y_factor",str2num(Y_Factor)); 
-                   
             end
-            if Read_Write == "Write"
-                Read_XY_factor = ''; 
-            end
-            fclose(fileID);
-        
+
+
         end
       
         % Useful Convenience Functions  
