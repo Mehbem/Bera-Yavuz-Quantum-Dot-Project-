@@ -74,12 +74,14 @@ classdef functionsContainer
 
             % Removing any points or pixels that are anomolies
             cleanedImg = bwareaopen(ReversedBWImg,Min_circle_area);
+            %imshow(cleanedImg)
 
 
             % Taking the Properties of Remaining Image
             [labeledImage, numObjects] = bwlabel(cleanedImg);
             props = regionprops(labeledImage, 'Area', 'Perimeter', 'Eccentricity',"EulerNumber");
-
+            
+    
 
             % Initialize a mask to keep desired objects
             filteredMask = false(size(cleanedImg));
@@ -87,7 +89,8 @@ classdef functionsContainer
             % Define thresholds for circularity and eccentricity
             circularityThreshold = 0.5; % Adjust as needed
             eccentricityThreshold = 0.83; % Adjust as needed
-
+            
+            % for loop for calculating the circularity
             for k = 1 : numObjects
                 area = props(k).Area;
                 perimeter = props(k).Perimeter;
@@ -105,9 +108,9 @@ classdef functionsContainer
 
             % Further Filtering Using properties
             [labeledImageV2, numObjectsV2] = bwlabel(filteredMask);
-            props_centroid = regionprops(filteredMask, 'Centroid'); % Labelling each centroid
+            props_centroid = regionprops(filteredMask, 'Centroid','Area'); % Labelling each centroid
             Centroids = vertcat(props_centroid.Centroid); % Putting them into a list for ease of access
-
+            avg_A_detected_spots = sum([props_centroid.Area])/numObjectsV2; 
 
             % Doing a minimum distance check to filter out points that have shape and
             % intensity properties but don't follow grid pattern
@@ -121,6 +124,9 @@ classdef functionsContainer
                 elseif MinimumDistCompQD <= 180
                     filterOutlierMask(labeledImageV2 == j) = true;
                 end
+                if props_centroid(j).Area < avg_A_detected_spots/2
+                   filterOutlierMask(labeledImageV2 == j) = false; 
+                end
             end
 
             % Array of coordinates scaled and scaling back up
@@ -128,6 +134,7 @@ classdef functionsContainer
             statsDots = regionprops(FinalbwQDImg, 'Centroid');
             centroid = vertcat(statsDots.Centroid) ./ scaling;
             CopyCentroid = centroid;
+            
 
              % Masked Image that will be Used for backgrounds
             GrayedImage = im2gray(Img);

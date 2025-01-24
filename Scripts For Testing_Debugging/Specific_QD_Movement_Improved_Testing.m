@@ -1,4 +1,5 @@
-
+clear;
+clc;
 % Object with all required functions
 MyFuncs = functionsContainer;
 MyFuncs.AddPathFunc("LAB"); 
@@ -21,13 +22,13 @@ y_factor = Read_XY_factor.Y_factor;
 
 % Initial Movement Towards Start
 % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CurrentQD =  [67 1];
+CurrentQD =  [73 6];
 QD_counter = CurrentQD; 
-InquiredQD = [43 7]; % user puts what value they want
+InquiredQD = [78 6]; % user puts what value they want
 PhotoType = "SteppingPhoto";
 fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20");
 fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20");
-pause(0.3)
+pause(0.5)
 [StartingQD,~,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,40);
 % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -220,7 +221,7 @@ for row_remaining = 1: remaining_QD_row
 end
 
 % final check to make sure exactly on dot 
-MyFuncs.OptimizedRasterScan(StartingQD, Table_FullQDList_sorted, Rotated_Table_FullQDList_sorted,direction_row,final_locking_on_margin)
+MyFuncs.Precision_Locking(ANC300,PhotoType,QD_counter,pyueye_initialization_return,final_locking_on_margin);
 
 pyrun_file_text_Spec = sprintf('QD_Spec_Plot_[%d %d]',InquiredQD);
 py.asi_func.snap_image(asi_initialization_return, pyrun_file_text_Spec)

@@ -17,8 +17,8 @@ ANC300 = serialport("COM7",9600); % Change X to the COM port connected
 % -----------------------------------------------------------------------------------
 % X-axis settings
 Mode_X = "stp"; % sets the mode of the axis (Possible options: "gnd" or "stp")
-Frequency_X = 12; % Possible options: 1 - 10000 (must be integer)
-Voltage_X = 20; % Possible options: 1 - 150.0 (can be a float value)
+Frequency_X = 30; % Possible options: 1 - 10000 (must be integer)
+Voltage_X = 30; % Possible options: 1 - 150.0 (can be a float value)
 
 serial_com_Mode_X = sprintf("setm 1 %s",Mode_X); fprintf(ANC300,serial_com_Mode_X)
 serial_com_Frequency_X = sprintf("setf 1 %s", num2str(Frequency_X)); fprintf(ANC300,serial_com_Frequency_X)

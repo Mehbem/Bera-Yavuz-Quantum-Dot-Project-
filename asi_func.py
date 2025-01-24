@@ -70,10 +70,10 @@ def snap_image(asi_initialization_return, filename):
     os.chdir(qd_data_ASI_raw_directory) 
 
     # Parameters for different gratings
-    row_index_1800mm_grating = 1744
+    row_index_1800mm_grating = 2000
     row_index_1200mm_grating = 1788
     row_index_150mm_grating = 1795
-    row_index_setting = row_index_150mm_grating
+    row_index_setting = row_index_1800mm_grating
 
     # Background filename
     bckgrnd_filename = 'background_1800mm_grating_'+date_string
@@ -87,16 +87,15 @@ def snap_image(asi_initialization_return, filename):
     camera_img_filename = filename + '.png'
     camera.set_image_type(asi.ASI_IMG_RAW8)
     camera.capture(filename=camera_img_filename)
-    print('Saved to %s' % camera_img_filename)
-
+    #print('Saved to %s' % camera_img_filename)
 
     # OpenCV checks, read and save image
     img = cv2.imread(camera_img_filename, cv2.IMREAD_GRAYSCALE)
-    y_index_range = np.arange(-300, 300, 1)
+    y_index_range = np.arange(-400, 400, 1)
     spectrum_sum = np.zeros(len(img[1, :]))
 
-    # plt.imshow(img)
-    # plt.show()
+    #plt.imshow(img)
+    #plt.show()
 
     bckgrnd_img_1 = cv2.imread(bckgrnd_img_filename_1, cv2.IMREAD_GRAYSCALE)
     bckgrnd_img_2 = cv2.imread(bckgrnd_img_filename_2, cv2.IMREAD_GRAYSCALE)
@@ -133,10 +132,9 @@ def snap_image(asi_initialization_return, filename):
     ax.set_xlabel('Wavelength [nm]')
     ax.set_ylabel('Arb. Counts')
     plt.gcf().set_size_inches(12, 8)
-    #plt.show()
-    plt.savefig(filename+'_wvl_graph'+'.png')
-
-    plt.clf()
+    plt.show()
+    #plt.savefig(filename+'_wvl_graph'+'.png')
+    #plt.clf()
 
     cv2.destroyAllWindows()
 
@@ -162,6 +160,5 @@ def snap_background(asi_initialization_return):
         print('Saved to %s' % camera_img_filename)
 
 
-
-# asi_initialization_return = init_camera() 
-# snap_image(asi_initialization_return, 'TEST_17092024')
+asi_initialization_return = init_camera() 
+snap_image(asi_initialization_return, 'TEST_6s_QD_Spec_Plot_[78 6]')
