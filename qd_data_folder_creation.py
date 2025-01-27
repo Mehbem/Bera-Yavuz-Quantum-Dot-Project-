@@ -67,13 +67,16 @@ def create_qd_data_directories():
 	qd_data_directory_today_B = date+"_Test/Spectrometer_ASI/"
 	qd_data_directory_today_C = date+"_Test/Spectrometer_Plots/"
 	qd_data_test_images = date+"_Test/"
+	qd_data_directory_RawImg_FSS = date+"_Test/"+"FSS_Measurements/Spectrometer_ASI_FSS/"
+	qd_data_directory_Plots_FSS = date+"_Test/"+"FSS_Measurements/Spectrometer_Plots_FSS/"
 
 	create_directory(qd_data_directory_main, qd_data_directory_today)
 	create_directory(qd_data_directory_main, qd_data_directory_today_A)
 	create_directory(qd_data_directory_main, qd_data_directory_today_B)
 	create_directory(qd_data_directory_main, qd_data_directory_today_C)
 	create_directory(qd_data_directory_testing,qd_data_test_images)
-
+	create_directory(qd_data_directory_main,qd_data_directory_RawImg_FSS)
+	create_directory(qd_data_directory_main,qd_data_directory_Plots_FSS)
 
 
 
