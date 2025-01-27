@@ -12,7 +12,7 @@ clc;
             date = py.qd_data_folder_creation.date_string(); 
             date = string(date);
 
-pathway_name_original = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_Data\\%s_Test\\Spectrometer_ASI",date);
+pathway_name_original = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_Data\\%s_Test\\Spectrometer_ASI\\background_1800mm_grating_%s_1.png",date,date);
 pathway_name_FSS = sprintf("C:\\Users\\Quantum Dot\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_Data\\%s_Test\\FSS_Measurements\\Spectrometer_ASI_FSS",date);
 
 
