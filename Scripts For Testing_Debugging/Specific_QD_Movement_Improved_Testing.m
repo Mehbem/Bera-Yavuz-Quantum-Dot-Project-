@@ -22,9 +22,9 @@ y_factor = Read_XY_factor.Y_factor;
 
 % Initial Movement Towards Start
 % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-CurrentQD =  [73 6];
+CurrentQD =  [78 3];
 QD_counter = CurrentQD; 
-InquiredQD = [78 6]; % user puts what value they want
+InquiredQD = [198 2]; % user puts what value they want
 PhotoType = "SteppingPhoto";
 fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20");
 fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20");

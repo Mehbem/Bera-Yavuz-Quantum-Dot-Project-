@@ -3,6 +3,8 @@
 clear;
 clc; 
 
+directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools"; 
+addpath(directoryPath_Scripts)
 %Fetch today's folder string 
 date = py.qd_data_folder_creation.date_string(); 
 date = string(date);
@@ -13,8 +15,7 @@ py.qd_data_folder_creation.create_qd_data_directories()
 % Adding all required pathways for functions 
 pathway_all_functions = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
 directoryPath_TestingImages = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\Scripts For Testing_Debugging\\Testing Images\\%s_Test",date); 
-directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools\Scripts For Testing_Debugging"; 
-addpath(pathway_all_functions,directoryPath_TestingImages,directoryPath_Scripts)
+addpath(pathway_all_functions,directoryPath_TestingImages)
 
 
 % file that contains all the functions 
