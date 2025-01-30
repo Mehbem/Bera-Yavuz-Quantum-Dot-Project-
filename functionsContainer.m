@@ -141,7 +141,7 @@ classdef functionsContainer
             MaskedImage = imadjust(GrayedImage);
             MaskedImage(~mask_scaled) = 0;
         end
-
+        
         function [allNextPts,allPerpPts,p1,p2,p3,p4,p5,p6] = MainAxes(obj,Img,centroid,CopyCentroid,radiusQD) %#ok<*INUSD>
             % Description:
                 % - finds a red axis and a blue axis that act as the corresponding x and y axis for the grid pattern of the QD
@@ -1381,6 +1381,7 @@ classdef functionsContainer
             circularityThreshold = 0.5; % Adjust as needed
             eccentricityThreshold = 0.83; % Adjust as needed
 
+
             for k = 1 : numObjects
                 area = props(k).Area;
                 perimeter = props(k).Perimeter;
@@ -1398,8 +1399,9 @@ classdef functionsContainer
 
             % Further Filtering Using properties
             [labeledImageV2, numObjectsV2] = bwlabel(filteredMask);
-            props_centroid = regionprops(filteredMask, 'Centroid'); % Labelling each centroid
+            props_centroid = regionprops(filteredMask, 'Centroid','Area'); % Labelling each centroid
             Centroids = vertcat(props_centroid.Centroid); % Putting them into a list for ease of access
+            avg_A_detected_spots = sum([props_centroid.Area])/numObjectsV2; 
 
 
             % Doing a minimum distance check to filter out points that have shape and
@@ -1413,6 +1415,9 @@ classdef functionsContainer
                     filterOutlierMask(labeledImageV2 == j) = false;
                 elseif MinimumDistCompQD <= 180
                     filterOutlierMask(labeledImageV2 == j) = true;
+                end
+                if props_centroid(j).Area < avg_A_detected_spots/2
+                   filterOutlierMask(labeledImageV2 == j) = false; 
                 end
             end
 
@@ -2171,7 +2176,7 @@ classdef functionsContainer
             
         end
  
-        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,PhotoType,QD_counter,vid_UI,src_UI)
+        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,PhotoType,QD_counter,vid_UI,src_UI,accuracy_margin)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
 
 
@@ -2204,13 +2209,12 @@ classdef functionsContainer
             x_factor = Read_XY_factor.X_factor; 
             y_factor = Read_XY_factor.Y_factor; 
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-            Eucli_ShortestDistance = 100; % Variable set for purposes of initializing while loop 
+            Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
             Iterations = 0; 
 
 
             
-            while Eucli_ShortestDistance > 25 
+            while Eucli_ShortestDistance > accuracy_margin
             Iterations = Iterations + 1; 
 
             % Snapping Photo 
@@ -3328,13 +3332,13 @@ classdef functionsContainer
 
         proper_exposure_setting = round(log2(ASI_Settings.desired_exposure_time)); %2^-15 seconds to 2^11 seconds 
         set(src_ASI,"ExposureMode","manual", "Exposure", proper_exposure_setting); %exposure is calculated as 2^n seconds by the camera (n = [-15 11])
-        set(src_ASI,"GainMode", "manual" ,"Gain", ASI_Settings.Exposure); % setting gain 
+        set(src_ASI,"GainMode", "manual" ,"Gain", ASI_Settings.Gain); % setting gain 
         set(src_ASI, "GammaMode","manual","Gamma",ASI_Settings.Gamma); % setting gamma
         set(src_ASI,"Brightness",ASI_Settings.Brightness); % setting brightness
         
         end
         
-        function [Emission_Reading_Img,pks] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID)
+        function [Emission_Reading_Img,pks,plot_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID)
         % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
         %
         % Syntax:
@@ -3485,10 +3489,13 @@ classdef functionsContainer
                     title(title_font);
                     xlabel('Wavelength [nm]');
                     ylabel('Arb. Counts');
+
+                    % plot image
+                    plot_img = gcf; 
                     
                     % Adjust the figure size
                     set(gcf, 'Position', [100, 100, 1200, 800]); % [left bottom width height]
-
+        
                     % finding the main peaks 
                     [pks,locs,~,~] = findpeaks(spectrum_sum,wvlength,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
 
