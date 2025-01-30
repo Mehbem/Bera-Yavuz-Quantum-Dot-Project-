@@ -1189,8 +1189,8 @@ classdef functionsContainer
 
             % print statements for number of steps (uncomment for debugging
             % purposes) 
-            % fprintf("X_step: %d\n",X_Stepping)
-            % fprintf("Y_step: %d\n",Y_Stepping)
+            % fprintf("X_step: %d",X_Stepping)
+            % fprintf("Y_step: %d",Y_Stepping)
 
             if X_Stepping >= 500 | Y_Stepping >= 500 
                 error("LARGE STEPPING ERROR, Call Van Damn")
@@ -1779,7 +1779,7 @@ classdef functionsContainer
 
         end
 
-        % this is the old non optimized function not in use but don't delete in case of debugging! 
+        % this is the old non optimized raster scan function not in use but don't delete in case of debugging! 
         function [DistanceBetweenPoints_Original,DistanceBetweenPoints_Rotated,NextPt_Coords,Rotated_NextPt,AllPointsOnDiagonal_Original,AllPointsOnDiagonal_Rotated] = Finalized_RasterScanPatt(obj,radiusQD,StartingQD,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted,direction,repeatingNum)
             % Description:
                 % - path finding for ANC300, user gives movement direction and the path finder finds the next QD in that direction  
@@ -2049,7 +2049,7 @@ classdef functionsContainer
     
         end
         
-        function [StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking(obj,ANC300,PhotoType,QD_counter,pyueye_initialization_return,accuracy_margin)
+        function [StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking(obj,ANC300,PhotoType,QD_counter,pyueye_initialization_return)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
 
             % Determining if the photo being taken is the starting QD determiner or stepping QD determiner 
@@ -2095,12 +2095,12 @@ classdef functionsContainer
             y_factor = Read_XY_factor.Y_factor; 
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-            Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
+            Eucli_ShortestDistance = 100; % Variable set for purposes of initializing while loop 
             Iterations = 0; 
 
 
             
-            while Eucli_ShortestDistance > accuracy_margin 
+            while Eucli_ShortestDistance > 25 
             Iterations = Iterations + 1; 
 
             % Snapping Photo 
@@ -2115,6 +2115,103 @@ classdef functionsContainer
 
             % Identifying real QD
             [grayImage,centroid,CopyCentroid,mask,Contrast_adjusted_Img,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,I);
+            
+            % Finds QD across the diagonal of image and collects data to form two main axes
+            [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
+            % Creates grid lines to find intersections
+            [x_main,y,x_perp,y_perp,b,perp_b,m,perp_m] = Finalized_GridLines(obj,allNextPts,allPerpPts); 
+            % Creates and plots Virtual and Real QD
+            [VirtualQDList,FullQDList_sorted,AllPossibleQDList,RealQDCentroids,centroidx,centroidy] = Finalized_VirtualQD(obj,num_lines,sep_red,sep_blue,m,perp_m,b,perp_b,CopyCentroid,Img,mask_scaled); 
+            % Rotates Img and dots displayed 
+            [VirtualQDList_rotated,RealQD_rotated,LEDSpotCentroid_rotated,Table_FullQDList_sorted,Rotated_Table_FullQDList_sorted,rotated_image] = Rotated_Img_n_Pts(obj,angle,MaskedImage,FullQDList_sorted,VirtualQDList,RealQDCentroids,LEDSpotCentroid);
+            %rotated_image = imrotate(MaskedImage, angle,"bilinear","crop");
+            % Finding the Starting Point based on Image 
+            [StartingQD_rotated,ShortestDistance,ID] = FindClosestPt(obj,Rotated_Table_FullQDList_sorted.("QD Coordinates"),LEDSpotCentroid_rotated); 
+            Eucli_ShortestDistance = EucliDistance(obj,LEDSpotCentroid_rotated,StartingQD_rotated); 
+            StartingQD = Table_FullQDList_sorted.("QD Coordinates")(ID,:); 
+            %fprintf("QD Coord Difference: X = %.3f | Y = %.3f\n",ShortestDistance)
+            %fprintf("Closest QD distance: %.2f\n",Eucli_ShortestDistance)
+
+            % figure("Name",title_text,"Color",skyBlue)
+            % imshow(rotated_image)
+            % hold on; 
+            % title_text_iter = sprintf(title_text + "iteration: %d",Iterations); 
+            % title(title_text_iter)
+            % plot(VirtualQDList_rotated(:,1), VirtualQDList_rotated(:,2), 'ro', 'MarkerSize', 7, 'MarkerFaceColor', 'r',"LineStyle","none"); % Rotated Virtual QD plotted
+            % plot(RealQD_rotated(:,1), RealQD_rotated(:,2), 'go', 'MarkerSize', 7, 'MarkerFaceColor', 'g',"LineStyle","none"); % Rotated Real QD plotted
+            % plot(LEDSpotCentroid_rotated(1),LEDSpotCentroid_rotated(2),"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0],"MarkerFaceColor",[1 0.5 0],"Marker","o","LineStyle","none"); % Rotated LED plotted 
+            % plot(StartingQD_rotated(1),StartingQD_rotated(2), 'bo', 'MarkerSize', 10,'MarkerFaceColor','b','LineStyle',"none");
+            % legend("Virtual QD", "Real QD", "LED spot", "Starting QD")
+            % 
+
+            % Finding direction need to travel to in order to get to QD 
+            [direction] = ClosestPtDirection(obj,ShortestDistance); 
+            %fprintf("%s\n",direction)
+            % Moving to the startingQD
+            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor,y_factor)
+            if Iterations > 50
+                %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+                break
+            end
+            end 
+            
+            
+            %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+            % fprintf("total iterations took %.2f seconds\n---------------------------------------\n",elaseped_Time)
+            % 
+
+ 
+            
+        end
+ 
+        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,PhotoType,QD_counter,vid_UI,src_UI)
+            % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
+
+
+            % Filtering Settings
+            scaling = 0.5;
+            skyBlue = [0.53, 0.81, 0.92];
+            radii_big_circle = 500;
+            center_big_circle = [650,500];
+            sigma_flatfield = 35;
+            Salt_pepper_pixel_factor = [20 20];
+            Min_circle_area = 200;
+            radiusQD = 25; %Pre Aug 9th 2024,30;
+
+
+            % Hard coded location of LED Spot
+            LEDSpotCentroid = LED_Cooordinate_Identifer(obj,"","Read","LAB"); 
+            LEDSpotCentroid = round(LEDSpotCentroid); 
+
+            % Define the number of parallel lines and their separation
+            num_lines = 9; % Num lines on each side of the original line
+            sep_red = 345; % Separation distance red lines
+            sep_blue = 370; % Seperation distance blue lines
+
+            % other paramters of use
+            Frequency = 20; 
+            angle = 45.1; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
+
+            % X and y factors
+            Read_XY_factor  = XY_Factor_Identifier(obj,"","Read","LAB"); 
+            x_factor = Read_XY_factor.X_factor; 
+            y_factor = Read_XY_factor.Y_factor; 
+            %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+            Eucli_ShortestDistance = 100; % Variable set for purposes of initializing while loop 
+            Iterations = 0; 
+
+
+            
+            while Eucli_ShortestDistance > 25 
+            Iterations = Iterations + 1; 
+
+            % Snapping Photo 
+            [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
+        
+
+            % Identifying real QD
+            [grayImage,centroid,CopyCentroid,mask,Contrast_adjusted_Img,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
             
             % Finds QD across the diagonal of image and collects data to form two main axes
             [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
@@ -2244,7 +2341,7 @@ classdef functionsContainer
             % Outputs:
                 % No output varialbe as sole purpose of function is to act as a small delay 
 
-            Error_Margin_Factor = 0.2; % in terms of seconds so change as appropriately 
+            Error_Margin_Factor = 0.1; % in terms of seconds so change as appropriately 
             time_to_pause = (Step_num/frequency) + Error_Margin_Factor; % calculating the time needed for pausing between lines 
             pause(time_to_pause) 
         end
@@ -2559,7 +2656,7 @@ classdef functionsContainer
             
             % Define the filename
             if Device == "LAB"
-            filename =  "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_History_Logs\QD_History_Log.txt";
+            filename =  "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_History_Logs\QD_History_log.txt";
             elseif Device == "MAC"
             filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\QD_History_log.txt";
             elseif Device == "HOME_PC"
@@ -2663,13 +2760,13 @@ classdef functionsContainer
             fclose(fileID);
         end
 
-        function readQD_position = QD_tracking_N_IdentificationVer2(obj,QD_position,InputSource,Action,Device,direction_QD)
+        function readQD_position = QD_tracking_N_IdentificationVer2(obj,QD_position,InputSource,Read_Write,Device,direction_QD)
             % Description:
                 % - % keeps track of the current QD position by keeping track within a text file  
             % Inputs:
                 % QD_position - current position of QD in the form of [row,column]
                 % InputSource - specifies if the input was automatically put or if the user manually put QD position (valid inputs: "Auto" or "Manual") 
-                % Action - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
+                % Read_Write - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
                 % Device - specifies what device user is using in order to access specific QD history file (valid inputs: "HOME_PC", "LAB")
                 % direction_QD - the direction at which the raster scan is travelling 
             % Outputs:
@@ -2684,7 +2781,7 @@ classdef functionsContainer
 
 
             if Device == "LAB"
-            filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
+            filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_text_files\\%s",HistoryTextFileName); 
             elseif Device == "HOME_PC"
             filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName); 
             elseif Device == "MAC"
@@ -2700,7 +2797,7 @@ classdef functionsContainer
             % Reading off of a previously existing text file for first dot 
 
 
-            switch Action 
+            switch Read_Write 
 
                 case "Initialize"
                     if exist(filenameLAB, 'file')
@@ -2720,9 +2817,9 @@ classdef functionsContainer
                     
                     if isempty(fileContent)
                         fclose(fileID_QD); 
-                        read_QD_History_log = Last_Log_Identification(obj,"Read","LAB"); 
-                        filename_QD_History = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
-                        %filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
+                        read_QD_History_log = Last_Log_Identification(obj,"Read","HOME_PC"); 
+                        %filename_QD_History = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\%s",read_QD_History_log); 
+                        filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
                         fileID_Log = fopen(filename_QD_History, 'rt'); 
                         if fileID_Log == -1
                             error('Failed to open the file.');
@@ -2745,11 +2842,11 @@ classdef functionsContainer
                                 if nonEmptyCount == 1
                                     lastline = lines{i};
                                 elseif nonEmptyCount == 3
-                                    thirdlastline = lines{i}; 
-                                    % split the string into words
-                                    words = strsplit(thirdlastline);
-                                    % extract the last word (direction)
-                                    Raster_DirectionQD = words{end}; 
+                                    thirdLastLine = lines{i};
+                                    % Split the string into words
+                                    words = strsplit(thirdLastLine);
+                                    % Extract the last word
+                                    Raster_DirectionQD = words{end};
                                     break
                                 end
                             end
@@ -2765,128 +2862,82 @@ classdef functionsContainer
                          % Write the timestamp and information to the file
                         fprintf(fileID, '%s\n================================================\nTaken from last QD text file\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr,Raster_DirectionQD,QD_position_initial);
                         fclose(fileID); 
-                        Last_Log_Identification(obj,"Write","LAB"); 
+                        Last_Log_Identification(obj,"Write","HOME_PC"); 
                     end
 
                 case "Write" 
                 
-                fileID = fopen(filenameLAB, 'a+');
-                % Check if the file opened successfully
-                if fileID == -1
-                    error('Failed to open the file.');
-                end
-    
-                
-                if InputSource == "Auto"
-                    InputSourceText = sprintf("QD position was updated --Automatically--");
-                elseif InputSource == "Manual"
-                    InputSourceText = sprintf("QD position was updated --Manually--");
-                else
-                    error("Invalid Input: Please Input Auto or Manual")
-                end 
-                % Write the timestamp and information to the file
-                fprintf(fileID, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
-                fclose(fileID); 
+                    fileID = fopen(filenameLAB, 'a+');
+                    % Check if the file opened successfully
+                    if fileID == -1
+                        error('Failed to open the file.');
+                    end
+        
+                    
+                    if InputSource == "Auto"
+                        InputSourceText = sprintf("QD position was updated --Automatically--");
+                    elseif InputSource == "Manual"
+                        InputSourceText = sprintf("QD position was updated --Manually--");
+                    else
+                        error("Invalid Input: Please Input Auto or Manual")
+                    end 
+                    % Write the timestamp and information to the file
+                    fprintf(fileID, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
+                    fclose(fileID); 
                 
                 case "Read"
-                fileID = fopen(filenameLAB, 'rt');
-                if fileID == -1
-                    error('Failed to open the file.');
-                end
-                
-                % Read the entire file into a single string
-                fileContent = fread(fileID, '*char')';
+                    fileID = fopen(filenameLAB, 'rt');
+                    if fileID == -1
+                        error('Failed to open the file.');
+                    end
+                    
+                    % Read the entire file into a single string
+                    fileContent = fread(fileID, '*char')';
 
-                if isempty(fileContent)
-                    fprintf("there is nothing in the file, please fix issue")
-                    return 
-                end
-                
-                % Split the content into lines
-                lines = strsplit(fileContent, newline);
-                
-                % Initialize variables to store the last three non-empty lines
-                lastLine = '';
-                secondLastLine = '';
-                thirdLastLine = '';
-                
-                nonEmptyCount = 0;  % Counter for non-empty lines
-                
-                % Loop through the lines in reverse order
-                for i = length(lines):-1:1
-                    if ~isempty(strtrim(lines{i}))
-                        nonEmptyCount = nonEmptyCount + 1;
-                        if nonEmptyCount == 1
-                            lastLine = lines{i};
-                        elseif nonEmptyCount == 2
-                            secondLastLine = lines{i};
-                        elseif nonEmptyCount == 3
-                            thirdLastLine = lines{i};
-                            % Split the string into words
-                            words = strsplit(thirdLastLine);
-                            % Extract the last word
-                            Raster_DirectionQD = words{end};
-                            break;  % Stop after finding the third-to-last non-empty line
+                    if isempty(fileContent)
+                        fprintf("there is nothing in the file, please fix issue")
+                        return 
+                    end
+                    
+                    % Split the content into lines
+                    lines = strsplit(fileContent, newline);
+                    
+                    % Initialize variables to store the last three non-empty lines
+                    lastLine = '';
+                    secondLastLine = '';
+                    thirdLastLine = '';
+                    
+                    nonEmptyCount = 0;  % Counter for non-empty lines
+                    
+                    % Loop through the lines in reverse order
+                    for i = length(lines):-1:1
+                        if ~isempty(strtrim(lines{i}))
+                            nonEmptyCount = nonEmptyCount + 1;
+                            if nonEmptyCount == 1
+                                lastLine = lines{i};
+                            elseif nonEmptyCount == 2
+                                secondLastLine = lines{i};
+                            elseif nonEmptyCount == 3
+                                thirdLastLine = lines{i};
+                                % Split the string into words
+                                words = strsplit(thirdLastLine);
+                                % Extract the last word
+                                Raster_DirectionQD = words{end};
+                                break;  % Stop after finding the third-to-last non-empty line
+                            end
                         end
                     end
-                end
-                
-                % Convert the last and third-to-last lines to numbers
-                readQD_position = struct('lastLine', str2num(lastLine), 'thirdLastLine', Raster_DirectionQD); 
-                fclose(fileID); 
+                    
+                    % Convert the last and third-to-last lines to numbers
+                    readQD_position = struct('lastLine', str2num(lastLine), 'thirdLastLine', Raster_DirectionQD); 
+                    fclose(fileID); 
             end
-            if Action == "Write"
+            if Read_Write == "Write"
                 readQD_position = ''; 
             end
         end
 
-        function read_fast_movement_setting = fast_movement_settings(obj,setting_updated,setting_value,Device, InputSource)
-        % Description:
-                % - % keeps track of the current QD position by keeping track within a text file  
-            % Inputs:
-                % setting_updated - which setting the user wants to chance
-                % setting_value - what the selected setting is being set to
-                % InputSource - specifies if the input was automatically put or if the user manually put QD position (valid inputs: "Auto" or "Manual") 
-                % Action - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
-                % Device - specifies what device user is using in order to access specific QD history file (valid inputs: "HOME_PC", "LAB")
-            % Outputs:
-                % read_fast_movement_setting -  reads setting for each respective thing 
-        
-            % Define the filename
-            t = datetime("now");
-            [y,m,d] = ymd(t);
-            date_today = sprintf("_%d_%d_%d",y,m,d);
-            HistoryTextFileName = sprintf("QD_History%s.txt",date_today);
-            currentTimeStr = datestr(t,'HH:MM:SS');
-        
-            if Device == "LAB"
-           filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName);
-           elseif Device == "HOME_PC"
-           filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName);
-           elseif Device == "MAC"
-           filenameLAB = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/QD_History.txt";
-           else
-               fprintf("invalid Device name try again")
-            end
 
-
-                   % Iterate over the fields in setting_updated
-            for i = 1:numel(setting_updated)
-                field_name = setting_updated(i); % Get the current field name
-                
-                % Check if the field exists in setting_value
-                if isfield(setting_value, field_name)
-                    fprintf('Field "%s" exists in setting_value.\n', field_name);
-                else
-                    % If the field doesn't exist, create it with a default value
-                    fprintf('Field "%s" does not exist. Creating it with a default value of 0.\n', field_name);
-                    setting_value.(field_name) = 0;
-                end
-            end
-
-
-        end
-      
         % Useful Convenience Functions  
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         function AddPathFunc(obj,Device)
@@ -2906,7 +2957,8 @@ classdef functionsContainer
                 case "LAB"
                     directoryPath_Funcs = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
                     directoryPath_LED = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\LED_Find_Images"; 
-                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools";
+                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Python_Scripts";
+
                     addpath(directoryPath_Funcs,directoryPath_LED,directoryPath_Scripts);
               
                 case "HOME_PC"
@@ -3063,6 +3115,363 @@ classdef functionsContainer
             % ------------------------------------------------------------------------
         end
 
+        function date_str = Fetch_Date(obj)
+        %FetchDate Creates date string with leading zeros in DD_MM_YYYY format
+        %   Returns date_str: String with zero-padded date (e.g., "20_01_2025")
+        %
+        %   Example:
+        %   date_str = getFormattedDate();  % Returns "20_01_2025" for Jan 20, 2025
+        %
+        %   Uses current date by default. Modify datetime call for specific dates.
+            % Create a datetime object with zero-padded format
+            dt = datetime('now', 'Format', 'dd MM yyyy'); % For current date
+            % dt = datetime(2025,1,20, 'Format', 'dd MM yyyy'); % For a specific date
             
+            % Split the formatted date string into components
+            date_str = string(dt);
+            split_str = split(date_str, ' ');
+            
+            % Assign to variables with leading zeros
+            day_str = split_str(1);    % Zero-padded day (e.g., "05")
+            month_str = split_str(2);  % Zero-padded month (e.g., "02")
+            year_str = split_str(3);   % Full year (e.g., "2025")
+            
+            % putting all the strings together for the date
+            date_str = sprintf("%s_%s_%s",day_str,month_str,year_str); 
+        end
+
+        % Camera Related Functions (setting up, snapping, etc) 
+        %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        function [vid_ASI,src_ASI,vid_UI,src_UI] = ASI_UI_CameraInit(obj,ASI_Settings,UI_Settings)
+        %ASI_UI_CAMERAINIT Initialize and configure ASI and UI cameras for imaging
+        %   This function detects connected cameras, identifies ASI and UI devices,
+        %   establishes video connections, and configures camera parameters.
+        %
+        %   Inputs:
+        %   obj - Parent object reference (for class-based implementation)
+        %   ASI_Settings - Struct containing configuration parameters for ASI camera:
+        %       desired_exposure_time: Exposure time in seconds (converted to log2 value)
+        %       Exposure: Gain value (0-100)
+        %       Gamma: Gamma correction value
+        %       Brightness: Brightness value (0-100)
+        %   UI_Settings - Reserved for future UI camera configuration (currently unused)
+        %
+        %   Outputs:
+        %   vid_ASI - Video input object for ASI camera
+        %   src_ASI - Source object for ASI camera properties
+        %   vid_UI - Video input object for UI camera
+        %   src_UI - Source object for UI camera properties
+        %
+        %   Example:
+        %   ASI_Config = struct('desired_exposure_time', 0.1, 'Exposure', 50, ...
+        %                      'Gamma', 1.0, 'Brightness', 75);
+        %   UI_Config = struct();
+        %   [vidASI, srcASI, vidUI, srcUI] = ASI_UI_CameraInit([], ASI_Config, UI_Config); 
+
+        % finding current imaging devices connected 
+        info = imaqhwinfo;
+        if isempty(info.InstalledAdaptors)
+            error('No cameras found. Connect a camera and try again.');
+        end
+        adaptor = info.InstalledAdaptors{1};
+        camInfo = imaqhwinfo(adaptor);
+        numCameras = numel(camInfo.DeviceIDs); 
+
+        % Check if at least two cameras are connected (making sure the UI and ASI
+        % camera are there) 
+        if numCameras < 2
+            error('Two cameras are required but only %d detected.', numCameras);
+        end
+         
+        % Identify each camera
+        for i = 1:numCameras
+            deviceID = camInfo.DeviceIDs{i}; % Get device ID
+            deviceName = camInfo.DeviceInfo(i).DeviceName; % Get device name
+            fprintf('Camera %d: ID = %d, Name = %s\n', i, deviceID, deviceName);
+            if contains(deviceName,"ASI") %  checks to see if the detected device is the ASI camera
+                ASI_Device_ID = i; 
+                fprintf("found ASI (spectrometer camera)\n")
+            elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
+                UI_Device_ID = i;
+                fprintf("found UI 148x Camera (nanowire camera)\n")
+            else % any other camera would have to be an unknown device
+                fprintf("unknown device detected\n")
+            end
+        end
+        
+        % establishing connection and parameters of ASI Device 
+        vid_ASI = videoinput(adaptor, ASI_Device_ID,"RGB8_6248x4176"); % function can take a third input to specify formatting (ASK Sreesh) 
+        src_ASI = getselectedsource(vid_ASI);
+        %all_props_ASI = propinfo(vid_ASI); shows all settings user can change 
+        
+        % establishing connection and parameters of UI Device 
+        vid_UI = videoinput(adaptor, UI_Device_ID);
+        src_UI = getselectedsource(vid_UI);
+        % all_props_UI = propinfo(vid_UI); % shows all settings user can change 
+        
+        % Setting correct Parameters for ASI camera
+        if numel(fieldnames(ASI_Settings)) < 4 %checking that enough settings exist for everything to be properly assigned 
+            fprintf("Not enough settings have been assigned to the ASI_Settings Struct")
+            return
+        end
+
+        proper_exposure_setting = round(log2(ASI_Settings.desired_exposure_time)); %2^-15 seconds to 2^11 seconds 
+        set(src_ASI,"ExposureMode","manual", "Exposure", proper_exposure_setting); %exposure is calculated as 2^n seconds by the camera (n = [-15 11])
+        set(src_ASI,"GainMode", "manual" ,"Gain", ASI_Settings.Exposure); % setting gain 
+        set(src_ASI, "GammaMode","manual","Gamma",ASI_Settings.Gamma); % setting gamma
+        set(src_ASI,"Brightness",ASI_Settings.Brightness); % setting brightness
+        
+        end
+        
+        function [Emission_Reading_Img,pks] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID)
+        % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
+        %
+        % Syntax:
+        %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_Gratting, QD_ID)
+        %
+        % Description:
+        %   This function captures an image from the ASI spectrometer system, processes the image based on the 
+        %   selected image type ("Background" or "Spectrometer"), and applies necessary corrections such as 
+        %   background subtraction and grayscale conversion. If the image type is "Spectrometer," it extracts 
+        %   spectral data, detects peak intensities, and saves a wavelength spectrum plot.
+        %
+        % Inputs:
+        %   obj                  - Object instance (not explicitly used in the function but required by class methods)
+        %   vid_ASI              - Video input object for the ASI camera
+        %   src_ASI              - Source properties of the ASI camera
+        %   ImgType              - Type of image to capture: "Background" or "Spectrometer"
+        %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
+        %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
+        %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
+        %
+        % Outputs:
+        %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
+
+            date = Fetch_Date(obj); % fetching today's date
+            date_test =  date + "_Test"; 
+            
+            % Main pathway for where the background photos end up 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
+            filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
+
+            % Define background image names and storage path
+            num_background_images = 3;
+            background_images = cell(1, num_background_images); % Preallocate cell array
+
+
+
+            switch ImgType
+                case "Background"
+                    
+                    % Capture and save background images
+                    for i = 1:num_background_images
+                        filename_background_saved = sprintf("%s_%d.png", filename_background, i);
+                        full_pathway = fullfile(pathway_main, filename_background_saved);
+                        background_img = getsnapshot(vid_ASI); % Capture frame
+                        imwrite(background_img, full_pathway); % Save image
+                        fprintf("Saved background image: %s\n", filename_background_saved);
+                    end
+
+                case "Spectrometer"
+
+                    %Parameters for different gratings
+                    if Spectrometer_Gratting == 1800
+
+                        % Define Wavelength Range
+                        wvlngth_start = 889.191;
+                        wvlngth_end = 895.011;
+                    elseif Spectrometer_Gratting == 1200
+
+                    elseif Spectrometer_Gratting == 150
+
+                    end
+
+
+                    
+                    % snapping a photo and gray scaling it 
+                    Emission_Reading_Img = getsnapshot(vid_ASI);
+                    if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
+                        Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
+                    end
+
+                    % Evaluating the boolean to see if user wants to save raw image
+                    if SaveImg == "Yes"
+                        specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
+                        RawImg_Fullpathway = fullfile(pathway_main,specific_filename_img);
+                        imwrite(Emission_Reading_Img,RawImg_Fullpathway)
+                    end
+                    
+                    %Highest-pixel based threshold:
+                    auto_thresh = max(Emission_Reading_Img,[],"all")*0.3; 
+                    
+                    % Apply threshold
+                    filtered_img = Emission_Reading_Img;
+                    filtered_img(Emission_Reading_Img <= auto_thresh) = 0;
+                    %imshow(filtered_img)
+
+                    % Read Background Images in grayscale
+                    for i = 1:num_background_images
+                    filename_background_saved = sprintf("%s_%d.png", filename_background, i);
+                    full_pathway = fullfile(pathway_main, filename_background_saved);
+                    img = imread(full_pathway);
+                    
+                        if size(img, 3) == 3 % Convert RGB images to grayscale
+                            img = rgb2gray(img);
+                        end
+                    
+                    background_images{i} = img; % Store in cell array
+                    end
+                    
+                    % assigning backgrounds to proper variables 
+                    bckgrnd_img_1 = background_images{1};
+                    bckgrnd_img_2 = background_images{2};
+                    bckgrnd_img_3 = background_images{3};
+
+
+                   
+                    % Find central row with maximum intensity
+                    intensity_per_row = sum(filtered_img, 2);
+                    [~, central_row] = max(intensity_per_row);
+                    
+                    % Auto-size vertical window
+                    window_size = round(height*0.15); % 15% below and above the central_row 
+                    valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
+
+                    
+                    % Sum spectrum with automated window
+                    spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
+                    bckgrnd_sum_1 = sum(double(bckgrnd_img_1(valid_rows, :)), 1);
+                    bckgrnd_sum_2 = sum(double(bckgrnd_img_2(valid_rows, :)), 1);
+                    bckgrnd_sum_3 = sum(double(bckgrnd_img_3(valid_rows, :)), 1);
+                    
+                    % averaging out and subtracting background
+                    bckgrnd_avg = (bckgrnd_sum_1 + bckgrnd_sum_2 + bckgrnd_sum_3)/3;
+                    spectrum_sum = spectrum_sum - bckgrnd_avg ;
+                    spectrum_sum = spectrum_sum/2;
+    
+                    % Init wavelength
+                    wvlength = linspace(wvlngth_start, wvlngth_end, size(filtered_img, 2));
+                   
+
+                    % Define the directory path for saving the plot
+                    ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
+                    Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting",QD_ID,Spectrometer_Gratting);
+                    qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
+                    
+                    
+                    % Create a new figure
+                    figure;
+                    
+                    % Make the figure invisible
+                    set(gcf, 'Visible', 'off');
+                    
+                    
+                    % Plot the spectrum data
+                    plot(wvlength, spectrum_sum);
+                    
+                    % Set title and labels
+                    title_font = sprintf("QD Spectrum Plot: [%d %d]",QD_ID);
+                    title(title_font);
+                    xlabel('Wavelength [nm]');
+                    ylabel('Arb. Counts');
+                    
+                    % Adjust the figure size
+                    set(gcf, 'Position', [100, 100, 1200, 800]); % [left bottom width height]
+
+                    % finding the main peaks 
+                    [pks,locs,~,~] = findpeaks(spectrum_sum,wvlength,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
+
+                    % Create text strings for top 3 peaks
+                    peak_text = cell(3,1);
+                    for n = 1:min(3,length(pks))
+                        peak_text{n} = sprintf('Peak %d: %.3f nm Abs. Counts: %.2f', n, locs(n),pks(n));
+                    end
+                    
+                    % Add text box in top-right corner
+                    text(0.95, 0.95, peak_text,...
+                        'Units', 'normalized',...
+                        'HorizontalAlignment', 'right',...
+                        'VerticalAlignment', 'top',...
+                        'BackgroundColor', [1 1 1 0.7],... % Semi-transparent white
+                        'EdgeColor', 'k',...
+                        'FontSize', 10,...
+                        'Margin', 3);
+                    
+                    % Set title and labels
+                    title_font = sprintf("QD Spectrum Plot: [%d %d]",[1 1]);
+                    title(title_font);
+                    xlabel('Wavelength [nm]');
+                    ylabel('Arb. Counts');
+
+
+                    % Save the plot as a .png file
+                    saveas(gcf, strcat(qd_data_ASI_plots_directory, '_wvl_graph.png'));
+
+                    % text file creation 
+                    data_matrix = [wvlength;spectrum_sum];
+                    specific_filename = sprtintf("[%d %d]_%dmm_gratting_Data_Text_File_%s",QD_ID,Spectrometer_Gratting,date); 
+                    text_file_pathway = fullfile(pathway_main,specific_filename); 
+                    file = fopen(text_file_pathway,'w');
+                    
+                    % Print the settings
+                    fprintf(file,'-----Settings-----\n');
+                    fprintf(file,'Spectrometer Grating: %dmm \n',Spectrometer_Gratting);
+                    fprintf(file,'Exposure: \t %.4E seconds \n', src_ASI.Exposure);
+                    fprintf(file,'Gain: \t %.1f \n',src_ASI.Gain);
+                    fprintf(file,'Resolution: \t %.0f x %.0f \n', width,height);
+                    fprintf(file,'Captured time: %s\n', datestr(now,'HH:MM:SS mmm-dd-yyyy'));
+                    % Print the data
+                    fprintf(file,'-----Data-----\n');
+                    fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Background Column Sum');
+                    fprintf(file,'%.4f \t %u\n',data_matrix);
+
+
+            end
+        end
+    
+        function [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,SaveImg,QD_ID) 
+        % UI_Snap_Img - Captures and saves an image from the UI camera.
+        %
+        % Syntax:
+        %   [UI_Position_Img] = UI_Snap_Img(obj, vid_UI, src_UI, SaveImg, QD_ID)
+        %
+        % Description:
+        %   This function captures an image from the UI camera, which is used for position tracking. 
+        %   The captured image is optionally saved based on the `SaveImg` parameter.
+        %
+        % Inputs:
+        %   obj       - Object instance (not explicitly used in this function but required for class methods)
+        %   vid_UI    - Video input object for the UI camera
+        %   src_UI    - Source properties of the UI camera (not used in this function)
+        %   SaveImg   - String flag ("Yes" or "No") indicating whether to save the captured image
+        %   QD_ID     - Identifier for the Quantum Dot sample or NanoWire chip position
+        %
+        % Outputs:
+        %   UI_Position_Img - Captured image from the UI camera
+        %
+        % Functionality:
+        %   - Captures an image using the UI camera.
+        %   - Saves the image to a predefined directory if `SaveImg` is "Yes".
+        %   - The saved image is named based on the `QD_ID` and timestamp.
+        %
+            
+            % fetching today's date
+            date = Fetch_Date(obj); 
+            date_test =  date + "_Test"; 
+            
+            % Defining the pathway for where the UI Imgs end up 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Position_uEYE"; 
+            file_name = sprintf("[%d %d]_NanoWireChip_Pos.jpg",QD_ID);
+            full_pathway = fullfile(pathway_main,file_name);
+            
+            % Capturing a snap of the UI camera
+            UI_Position_Img = getsnapshot(vid_UI);
+
+            % Evaluating boolean to see if photo gets saved
+            if SaveImg == "Yes"
+                imwrite(UI_Position_Img,full_pathway)
+            end
+
+        end
     end
 end

@@ -1779,7 +1779,7 @@ classdef functionsContainer
 
         end
 
-        % this is the old non optimized function not in use but don't delete in case of debugging! 
+        % this is the old non optimized raster scan function not in use but don't delete in case of debugging! 
         function [DistanceBetweenPoints_Original,DistanceBetweenPoints_Rotated,NextPt_Coords,Rotated_NextPt,AllPointsOnDiagonal_Original,AllPointsOnDiagonal_Rotated] = Finalized_RasterScanPatt(obj,radiusQD,StartingQD,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted,direction,repeatingNum)
             % Description:
                 % - path finding for ANC300, user gives movement direction and the path finder finds the next QD in that direction  
@@ -2115,6 +2115,103 @@ classdef functionsContainer
 
             % Identifying real QD
             [grayImage,centroid,CopyCentroid,mask,Contrast_adjusted_Img,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,I);
+            
+            % Finds QD across the diagonal of image and collects data to form two main axes
+            [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
+            % Creates grid lines to find intersections
+            [x_main,y,x_perp,y_perp,b,perp_b,m,perp_m] = Finalized_GridLines(obj,allNextPts,allPerpPts); 
+            % Creates and plots Virtual and Real QD
+            [VirtualQDList,FullQDList_sorted,AllPossibleQDList,RealQDCentroids,centroidx,centroidy] = Finalized_VirtualQD(obj,num_lines,sep_red,sep_blue,m,perp_m,b,perp_b,CopyCentroid,Img,mask_scaled); 
+            % Rotates Img and dots displayed 
+            [VirtualQDList_rotated,RealQD_rotated,LEDSpotCentroid_rotated,Table_FullQDList_sorted,Rotated_Table_FullQDList_sorted,rotated_image] = Rotated_Img_n_Pts(obj,angle,MaskedImage,FullQDList_sorted,VirtualQDList,RealQDCentroids,LEDSpotCentroid);
+            %rotated_image = imrotate(MaskedImage, angle,"bilinear","crop");
+            % Finding the Starting Point based on Image 
+            [StartingQD_rotated,ShortestDistance,ID] = FindClosestPt(obj,Rotated_Table_FullQDList_sorted.("QD Coordinates"),LEDSpotCentroid_rotated); 
+            Eucli_ShortestDistance = EucliDistance(obj,LEDSpotCentroid_rotated,StartingQD_rotated); 
+            StartingQD = Table_FullQDList_sorted.("QD Coordinates")(ID,:); 
+            %fprintf("QD Coord Difference: X = %.3f | Y = %.3f\n",ShortestDistance)
+            %fprintf("Closest QD distance: %.2f\n",Eucli_ShortestDistance)
+
+            % figure("Name",title_text,"Color",skyBlue)
+            % imshow(rotated_image)
+            % hold on; 
+            % title_text_iter = sprintf(title_text + "iteration: %d",Iterations); 
+            % title(title_text_iter)
+            % plot(VirtualQDList_rotated(:,1), VirtualQDList_rotated(:,2), 'ro', 'MarkerSize', 7, 'MarkerFaceColor', 'r',"LineStyle","none"); % Rotated Virtual QD plotted
+            % plot(RealQD_rotated(:,1), RealQD_rotated(:,2), 'go', 'MarkerSize', 7, 'MarkerFaceColor', 'g',"LineStyle","none"); % Rotated Real QD plotted
+            % plot(LEDSpotCentroid_rotated(1),LEDSpotCentroid_rotated(2),"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0],"MarkerFaceColor",[1 0.5 0],"Marker","o","LineStyle","none"); % Rotated LED plotted 
+            % plot(StartingQD_rotated(1),StartingQD_rotated(2), 'bo', 'MarkerSize', 10,'MarkerFaceColor','b','LineStyle',"none");
+            % legend("Virtual QD", "Real QD", "LED spot", "Starting QD")
+            % 
+
+            % Finding direction need to travel to in order to get to QD 
+            [direction] = ClosestPtDirection(obj,ShortestDistance); 
+            %fprintf("%s\n",direction)
+            % Moving to the startingQD
+            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor,y_factor)
+            if Iterations > 50
+                %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+                break
+            end
+            end 
+            
+            
+            %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+            % fprintf("total iterations took %.2f seconds\n---------------------------------------\n",elaseped_Time)
+            % 
+
+ 
+            
+        end
+ 
+        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,PhotoType,QD_counter,vid_UI,src_UI)
+            % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
+
+
+            % Filtering Settings
+            scaling = 0.5;
+            skyBlue = [0.53, 0.81, 0.92];
+            radii_big_circle = 500;
+            center_big_circle = [650,500];
+            sigma_flatfield = 35;
+            Salt_pepper_pixel_factor = [20 20];
+            Min_circle_area = 200;
+            radiusQD = 25; %Pre Aug 9th 2024,30;
+
+
+            % Hard coded location of LED Spot
+            LEDSpotCentroid = LED_Cooordinate_Identifer(obj,"","Read","LAB"); 
+            LEDSpotCentroid = round(LEDSpotCentroid); 
+
+            % Define the number of parallel lines and their separation
+            num_lines = 9; % Num lines on each side of the original line
+            sep_red = 345; % Separation distance red lines
+            sep_blue = 370; % Seperation distance blue lines
+
+            % other paramters of use
+            Frequency = 20; 
+            angle = 45.1; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
+
+            % X and y factors
+            Read_XY_factor  = XY_Factor_Identifier(obj,"","Read","LAB"); 
+            x_factor = Read_XY_factor.X_factor; 
+            y_factor = Read_XY_factor.Y_factor; 
+            %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+            Eucli_ShortestDistance = 100; % Variable set for purposes of initializing while loop 
+            Iterations = 0; 
+
+
+            
+            while Eucli_ShortestDistance > 25 
+            Iterations = Iterations + 1; 
+
+            % Snapping Photo 
+            [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
+        
+
+            % Identifying real QD
+            [grayImage,centroid,CopyCentroid,mask,Contrast_adjusted_Img,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
             
             % Finds QD across the diagonal of image and collects data to form two main axes
             [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
@@ -3079,6 +3176,7 @@ classdef functionsContainer
         adaptor = info.InstalledAdaptors{1};
         camInfo = imaqhwinfo(adaptor);
         numCameras = numel(camInfo.DeviceIDs); 
+
         % Check if at least two cameras are connected (making sure the UI and ASI
         % camera are there) 
         if numCameras < 2
@@ -3112,6 +3210,11 @@ classdef functionsContainer
         % all_props_UI = propinfo(vid_UI); % shows all settings user can change 
         
         % Setting correct Parameters for ASI camera
+        if numel(fieldnames(ASI_Settings)) < 4 %checking that enough settings exist for everything to be properly assigned 
+            fprintf("Not enough settings have been assigned to the ASI_Settings Struct")
+            return
+        end
+
         proper_exposure_setting = round(log2(ASI_Settings.desired_exposure_time)); %2^-15 seconds to 2^11 seconds 
         set(src_ASI,"ExposureMode","manual", "Exposure", proper_exposure_setting); %exposure is calculated as 2^n seconds by the camera (n = [-15 11])
         set(src_ASI,"GainMode", "manual" ,"Gain", ASI_Settings.Exposure); % setting gain 
@@ -3120,13 +3223,35 @@ classdef functionsContainer
         
         end
         
-        function [Emission_Reading_Img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID)
+        function [Emission_Reading_Img,pks] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID)
+        % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
+        %
+        % Syntax:
+        %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_Gratting, QD_ID)
+        %
+        % Description:
+        %   This function captures an image from the ASI spectrometer system, processes the image based on the 
+        %   selected image type ("Background" or "Spectrometer"), and applies necessary corrections such as 
+        %   background subtraction and grayscale conversion. If the image type is "Spectrometer," it extracts 
+        %   spectral data, detects peak intensities, and saves a wavelength spectrum plot.
+        %
+        % Inputs:
+        %   obj                  - Object instance (not explicitly used in the function but required by class methods)
+        %   vid_ASI              - Video input object for the ASI camera
+        %   src_ASI              - Source properties of the ASI camera
+        %   ImgType              - Type of image to capture: "Background" or "Spectrometer"
+        %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
+        %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
+        %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
+        %
+        % Outputs:
+        %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
 
             date = Fetch_Date(obj); % fetching today's date
             date_test =  date + "_Test"; 
             
             % Main pathway for where the background photos end up 
-            pathway_background = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
             filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
 
             % Define background image names and storage path
@@ -3141,7 +3266,7 @@ classdef functionsContainer
                     % Capture and save background images
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
-                        full_pathway = fullfile(pathway_background, filename_background_saved);
+                        full_pathway = fullfile(pathway_main, filename_background_saved);
                         background_img = getsnapshot(vid_ASI); % Capture frame
                         imwrite(background_img, full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
@@ -3163,13 +3288,18 @@ classdef functionsContainer
 
 
                     
-                    % snapping a photo and gay scaling it 
+                    % snapping a photo and gray scaling it 
                     Emission_Reading_Img = getsnapshot(vid_ASI);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
 
-
+                    % Evaluating the boolean to see if user wants to save raw image
+                    if SaveImg == "Yes"
+                        specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
+                        RawImg_Fullpathway = fullfile(pathway_main,specific_filename_img);
+                        imwrite(Emission_Reading_Img,RawImg_Fullpathway)
+                    end
                     
                     %Highest-pixel based threshold:
                     auto_thresh = max(Emission_Reading_Img,[],"all")*0.3; 
@@ -3182,7 +3312,7 @@ classdef functionsContainer
                     % Read Background Images in grayscale
                     for i = 1:num_background_images
                     filename_background_saved = sprintf("%s_%d.png", filename_background, i);
-                    full_pathway = fullfile(pathway_background, filename_background_saved);
+                    full_pathway = fullfile(pathway_main, filename_background_saved);
                     img = imread(full_pathway);
                     
                         if size(img, 3) == 3 % Convert RGB images to grayscale
@@ -3209,7 +3339,7 @@ classdef functionsContainer
 
                     
                     % Sum spectrum with automated window
-                    spectrum_sum = sum(double(img(valid_rows, :)), 1);
+                    spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
                     bckgrnd_sum_1 = sum(double(bckgrnd_img_1(valid_rows, :)), 1);
                     bckgrnd_sum_2 = sum(double(bckgrnd_img_2(valid_rows, :)), 1);
                     bckgrnd_sum_3 = sum(double(bckgrnd_img_3(valid_rows, :)), 1);
@@ -3225,11 +3355,9 @@ classdef functionsContainer
 
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
-                    Quantum_Dot_Named_File = sprintf("QD: [%d %d]",QD_ID);
+                    Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting",QD_ID,Spectrometer_Gratting);
                     qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
                     
-                    
-              
                     
                     % Create a new figure
                     figure;
@@ -3279,7 +3407,71 @@ classdef functionsContainer
                     % Save the plot as a .png file
                     saveas(gcf, strcat(qd_data_ASI_plots_directory, '_wvl_graph.png'));
 
+                    % text file creation 
+                    data_matrix = [wvlength;spectrum_sum];
+                    specific_filename = sprtintf("[%d %d]_%dmm_gratting_Data_Text_File_%s",QD_ID,Spectrometer_Gratting,date); 
+                    text_file_pathway = fullfile(pathway_main,specific_filename); 
+                    file = fopen(text_file_pathway,'w');
+                    
+                    % Print the settings
+                    fprintf(file,'-----Settings-----\n');
+                    fprintf(file,'Spectrometer Grating: %dmm \n',Spectrometer_Gratting);
+                    fprintf(file,'Exposure: \t %.4E seconds \n', src_ASI.Exposure);
+                    fprintf(file,'Gain: \t %.1f \n',src_ASI.Gain);
+                    fprintf(file,'Resolution: \t %.0f x %.0f \n', width,height);
+                    fprintf(file,'Captured time: %s\n', datestr(now,'HH:MM:SS mmm-dd-yyyy'));
+                    % Print the data
+                    fprintf(file,'-----Data-----\n');
+                    fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Background Column Sum');
+                    fprintf(file,'%.4f \t %u\n',data_matrix);
+
+
             end
+        end
+    
+        function [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,SaveImg,QD_ID) 
+        % UI_Snap_Img - Captures and saves an image from the UI camera.
+        %
+        % Syntax:
+        %   [UI_Position_Img] = UI_Snap_Img(obj, vid_UI, src_UI, SaveImg, QD_ID)
+        %
+        % Description:
+        %   This function captures an image from the UI camera, which is used for position tracking. 
+        %   The captured image is optionally saved based on the `SaveImg` parameter.
+        %
+        % Inputs:
+        %   obj       - Object instance (not explicitly used in this function but required for class methods)
+        %   vid_UI    - Video input object for the UI camera
+        %   src_UI    - Source properties of the UI camera (not used in this function)
+        %   SaveImg   - String flag ("Yes" or "No") indicating whether to save the captured image
+        %   QD_ID     - Identifier for the Quantum Dot sample or NanoWire chip position
+        %
+        % Outputs:
+        %   UI_Position_Img - Captured image from the UI camera
+        %
+        % Functionality:
+        %   - Captures an image using the UI camera.
+        %   - Saves the image to a predefined directory if `SaveImg` is "Yes".
+        %   - The saved image is named based on the `QD_ID` and timestamp.
+        %
+            
+            % fetching today's date
+            date = Fetch_Date(obj); 
+            date_test =  date + "_Test"; 
+            
+            % Defining the pathway for where the UI Imgs end up 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Position_uEYE"; 
+            file_name = sprintf("[%d %d]_NanoWireChip_Pos.jpg",QD_ID);
+            full_pathway = fullfile(pathway_main,file_name);
+            
+            % Capturing a snap of the UI camera
+            UI_Position_Img = getsnapshot(vid_UI);
+
+            % Evaluating boolean to see if photo gets saved
+            if SaveImg == "Yes"
+                imwrite(UI_Position_Img,full_pathway)
+            end
+
         end
     end
 end
