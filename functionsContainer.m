@@ -74,12 +74,14 @@ classdef functionsContainer
 
             % Removing any points or pixels that are anomolies
             cleanedImg = bwareaopen(ReversedBWImg,Min_circle_area);
+            %imshow(cleanedImg)
 
 
             % Taking the Properties of Remaining Image
             [labeledImage, numObjects] = bwlabel(cleanedImg);
             props = regionprops(labeledImage, 'Area', 'Perimeter', 'Eccentricity',"EulerNumber");
-
+            
+    
 
             % Initialize a mask to keep desired objects
             filteredMask = false(size(cleanedImg));
@@ -87,7 +89,8 @@ classdef functionsContainer
             % Define thresholds for circularity and eccentricity
             circularityThreshold = 0.5; % Adjust as needed
             eccentricityThreshold = 0.83; % Adjust as needed
-
+            
+            % for loop for calculating the circularity
             for k = 1 : numObjects
                 area = props(k).Area;
                 perimeter = props(k).Perimeter;
@@ -105,9 +108,9 @@ classdef functionsContainer
 
             % Further Filtering Using properties
             [labeledImageV2, numObjectsV2] = bwlabel(filteredMask);
-            props_centroid = regionprops(filteredMask, 'Centroid'); % Labelling each centroid
+            props_centroid = regionprops(filteredMask, 'Centroid','Area'); % Labelling each centroid
             Centroids = vertcat(props_centroid.Centroid); % Putting them into a list for ease of access
-
+            avg_A_detected_spots = sum([props_centroid.Area])/numObjectsV2; 
 
             % Doing a minimum distance check to filter out points that have shape and
             % intensity properties but don't follow grid pattern
@@ -121,6 +124,9 @@ classdef functionsContainer
                 elseif MinimumDistCompQD <= 180
                     filterOutlierMask(labeledImageV2 == j) = true;
                 end
+                if props_centroid(j).Area < avg_A_detected_spots/2
+                   filterOutlierMask(labeledImageV2 == j) = false; 
+                end
             end
 
             % Array of coordinates scaled and scaling back up
@@ -128,6 +134,7 @@ classdef functionsContainer
             statsDots = regionprops(FinalbwQDImg, 'Centroid');
             centroid = vertcat(statsDots.Centroid) ./ scaling;
             CopyCentroid = centroid;
+            
 
              % Masked Image that will be Used for backgrounds
             GrayedImage = im2gray(Img);
@@ -1189,8 +1196,8 @@ classdef functionsContainer
 
             % print statements for number of steps (uncomment for debugging
             % purposes) 
-            % fprintf("X_step: %d",X_Stepping)
-            % fprintf("Y_step: %d",Y_Stepping)
+            % fprintf("X_step: %d\n",X_Stepping)
+            % fprintf("Y_step: %d\n",Y_Stepping)
 
             if X_Stepping >= 500 | Y_Stepping >= 500 
                 error("LARGE STEPPING ERROR, Call Van Damn")
@@ -2049,7 +2056,7 @@ classdef functionsContainer
     
         end
         
-        function [StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking(obj,ANC300,PhotoType,QD_counter,pyueye_initialization_return)
+        function [StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking(obj,ANC300,PhotoType,QD_counter,pyueye_initialization_return,accuracy_margin)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
 
             % Determining if the photo being taken is the starting QD determiner or stepping QD determiner 
@@ -2095,12 +2102,12 @@ classdef functionsContainer
             y_factor = Read_XY_factor.Y_factor; 
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-            Eucli_ShortestDistance = 100; % Variable set for purposes of initializing while loop 
+            Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
             Iterations = 0; 
 
 
             
-            while Eucli_ShortestDistance > 25 
+            while Eucli_ShortestDistance > accuracy_margin 
             Iterations = Iterations + 1; 
 
             % Snapping Photo 
@@ -2341,7 +2348,7 @@ classdef functionsContainer
             % Outputs:
                 % No output varialbe as sole purpose of function is to act as a small delay 
 
-            Error_Margin_Factor = 0.1; % in terms of seconds so change as appropriately 
+            Error_Margin_Factor = 0.2; % in terms of seconds so change as appropriately 
             time_to_pause = (Step_num/frequency) + Error_Margin_Factor; % calculating the time needed for pausing between lines 
             pause(time_to_pause) 
         end
@@ -2656,7 +2663,7 @@ classdef functionsContainer
             
             % Define the filename
             if Device == "LAB"
-            filename =  "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_History_Logs\QD_History_log.txt";
+            filename =  "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_History_Logs\QD_History_Log.txt";
             elseif Device == "MAC"
             filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\QD_History_log.txt";
             elseif Device == "HOME_PC"
@@ -2760,13 +2767,13 @@ classdef functionsContainer
             fclose(fileID);
         end
 
-        function readQD_position = QD_tracking_N_IdentificationVer2(obj,QD_position,InputSource,Read_Write,Device,direction_QD)
+        function readQD_position = QD_tracking_N_IdentificationVer2(obj,QD_position,InputSource,Action,Device,direction_QD)
             % Description:
                 % - % keeps track of the current QD position by keeping track within a text file  
             % Inputs:
                 % QD_position - current position of QD in the form of [row,column]
                 % InputSource - specifies if the input was automatically put or if the user manually put QD position (valid inputs: "Auto" or "Manual") 
-                % Read_Write - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
+                % Action - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
                 % Device - specifies what device user is using in order to access specific QD history file (valid inputs: "HOME_PC", "LAB")
                 % direction_QD - the direction at which the raster scan is travelling 
             % Outputs:
@@ -2781,7 +2788,7 @@ classdef functionsContainer
 
 
             if Device == "LAB"
-            filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_text_files\\%s",HistoryTextFileName); 
+            filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
             elseif Device == "HOME_PC"
             filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName); 
             elseif Device == "MAC"
@@ -2797,7 +2804,7 @@ classdef functionsContainer
             % Reading off of a previously existing text file for first dot 
 
 
-            switch Read_Write 
+            switch Action 
 
                 case "Initialize"
                     if exist(filenameLAB, 'file')
@@ -2817,9 +2824,9 @@ classdef functionsContainer
                     
                     if isempty(fileContent)
                         fclose(fileID_QD); 
-                        read_QD_History_log = Last_Log_Identification(obj,"Read","HOME_PC"); 
-                        %filename_QD_History = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\%s",read_QD_History_log); 
-                        filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
+                        read_QD_History_log = Last_Log_Identification(obj,"Read","LAB"); 
+                        filename_QD_History = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
+                        %filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
                         fileID_Log = fopen(filename_QD_History, 'rt'); 
                         if fileID_Log == -1
                             error('Failed to open the file.');
@@ -2842,11 +2849,11 @@ classdef functionsContainer
                                 if nonEmptyCount == 1
                                     lastline = lines{i};
                                 elseif nonEmptyCount == 3
-                                    thirdLastLine = lines{i};
-                                    % Split the string into words
-                                    words = strsplit(thirdLastLine);
-                                    % Extract the last word
-                                    Raster_DirectionQD = words{end};
+                                    thirdlastline = lines{i}; 
+                                    % split the string into words
+                                    words = strsplit(thirdlastline);
+                                    % extract the last word (direction)
+                                    Raster_DirectionQD = words{end}; 
                                     break
                                 end
                             end
@@ -2862,82 +2869,187 @@ classdef functionsContainer
                          % Write the timestamp and information to the file
                         fprintf(fileID, '%s\n================================================\nTaken from last QD text file\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr,Raster_DirectionQD,QD_position_initial);
                         fclose(fileID); 
-                        Last_Log_Identification(obj,"Write","HOME_PC"); 
+                        Last_Log_Identification(obj,"Write","LAB"); 
                     end
 
                 case "Write" 
                 
-                    fileID = fopen(filenameLAB, 'a+');
-                    % Check if the file opened successfully
-                    if fileID == -1
-                        error('Failed to open the file.');
-                    end
-        
-                    
-                    if InputSource == "Auto"
-                        InputSourceText = sprintf("QD position was updated --Automatically--");
-                    elseif InputSource == "Manual"
-                        InputSourceText = sprintf("QD position was updated --Manually--");
-                    else
-                        error("Invalid Input: Please Input Auto or Manual")
-                    end 
-                    % Write the timestamp and information to the file
-                    fprintf(fileID, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
-                    fclose(fileID); 
+                fileID = fopen(filenameLAB, 'a+');
+                % Check if the file opened successfully
+                if fileID == -1
+                    error('Failed to open the file.');
+                end
+    
+                
+                if InputSource == "Auto"
+                    InputSourceText = sprintf("QD position was updated --Automatically--");
+                elseif InputSource == "Manual"
+                    InputSourceText = sprintf("QD position was updated --Manually--");
+                else
+                    error("Invalid Input: Please Input Auto or Manual")
+                end 
+                % Write the timestamp and information to the file
+                fprintf(fileID, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
+                fclose(fileID); 
                 
                 case "Read"
-                    fileID = fopen(filenameLAB, 'rt');
-                    if fileID == -1
-                        error('Failed to open the file.');
-                    end
-                    
-                    % Read the entire file into a single string
-                    fileContent = fread(fileID, '*char')';
+                fileID = fopen(filenameLAB, 'rt');
+                if fileID == -1
+                    error('Failed to open the file.');
+                end
+                
+                % Read the entire file into a single string
+                fileContent = fread(fileID, '*char')';
 
-                    if isempty(fileContent)
-                        fprintf("there is nothing in the file, please fix issue")
-                        return 
-                    end
-                    
-                    % Split the content into lines
-                    lines = strsplit(fileContent, newline);
-                    
-                    % Initialize variables to store the last three non-empty lines
-                    lastLine = '';
-                    secondLastLine = '';
-                    thirdLastLine = '';
-                    
-                    nonEmptyCount = 0;  % Counter for non-empty lines
-                    
-                    % Loop through the lines in reverse order
-                    for i = length(lines):-1:1
-                        if ~isempty(strtrim(lines{i}))
-                            nonEmptyCount = nonEmptyCount + 1;
-                            if nonEmptyCount == 1
-                                lastLine = lines{i};
-                            elseif nonEmptyCount == 2
-                                secondLastLine = lines{i};
-                            elseif nonEmptyCount == 3
-                                thirdLastLine = lines{i};
-                                % Split the string into words
-                                words = strsplit(thirdLastLine);
-                                % Extract the last word
-                                Raster_DirectionQD = words{end};
-                                break;  % Stop after finding the third-to-last non-empty line
-                            end
+                if isempty(fileContent)
+                    fprintf("there is nothing in the file, please fix issue")
+                    return 
+                end
+                
+                % Split the content into lines
+                lines = strsplit(fileContent, newline);
+                
+                % Initialize variables to store the last three non-empty lines
+                lastLine = '';
+                secondLastLine = '';
+                thirdLastLine = '';
+                
+                nonEmptyCount = 0;  % Counter for non-empty lines
+                
+                % Loop through the lines in reverse order
+                for i = length(lines):-1:1
+                    if ~isempty(strtrim(lines{i}))
+                        nonEmptyCount = nonEmptyCount + 1;
+                        if nonEmptyCount == 1
+                            lastLine = lines{i};
+                        elseif nonEmptyCount == 2
+                            secondLastLine = lines{i};
+                        elseif nonEmptyCount == 3
+                            thirdLastLine = lines{i};
+                            % Split the string into words
+                            words = strsplit(thirdLastLine);
+                            % Extract the last word
+                            Raster_DirectionQD = words{end};
+                            break;  % Stop after finding the third-to-last non-empty line
                         end
                     end
-                    
-                    % Convert the last and third-to-last lines to numbers
-                    readQD_position = struct('lastLine', str2num(lastLine), 'thirdLastLine', Raster_DirectionQD); 
-                    fclose(fileID); 
+                end
+                
+                % Convert the last and third-to-last lines to numbers
+                readQD_position = struct('lastLine', str2num(lastLine), 'thirdLastLine', Raster_DirectionQD); 
+                fclose(fileID); 
             end
-            if Read_Write == "Write"
+            if Action == "Write"
                 readQD_position = ''; 
             end
         end
 
+        function read_fast_movement_setting = fast_movement_settings(obj,setting_updated,setting_value,Device, InputSource)
+        % Description:
+                % - % keeps track of the current QD position by keeping track within a text file  
+            % Inputs:
+                % setting_updated - which setting the user wants to chance
+                % setting_value - what the selected setting is being set to
+                % InputSource - specifies if user is trying to get the current position or if current position is being updated and if new file is being made(valid inputs: "Read","Write","Initialize")
+                % Device - specifies what device user is using in order to access specific QD history file (valid inputs: "HOME_PC", "LAB")
+            % Outputs:
+                % read_fast_movement_setting -  reads setting for each respective thing 
+        
+            % Define the filename
+            t = datetime("now");
+            [y,m,d] = ymd(t);
+            date_today = sprintf("_%d_%d_%d",y,m,d);
+            HistoryTextFileName = sprintf("QD_History%s.txt",date_today);
+            currentTimeStr = datestr(t,'HH:MM:SS');
+        
+            if Device == "LAB"
+           filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName);
+           elseif Device == "HOME_PC"
+           filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName);
+           elseif Device == "MAC"
+           filenameLAB = "/Users/bera_yavuz/Desktop/Testing dumb thing folder/Fast_Movement_Settings.txt";
+           else
+               fprintf("invalid Device name try again")
+            end
 
+
+             if Device == "LAB" 
+            filename = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\XY_Factor_Images\XY_Factor_History.txt";
+            elseif Device == "HOME_PC"
+            filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\XY_Factor_History.txt"; 
+            else
+                fprintf("invalid Device name try again")
+            end
+    
+
+            switch InputSource 
+
+                case "Write" 
+                fileID = fopen(filename, 'a+');
+                % Check if the file opened successfully
+                if fileID == -1
+                    error('Failed to open the file.');
+                end
+
+                % Get the current timestamp
+                currentDateTime = datetime('now');
+                currentDateTimeText = string(currentDateTime);
+               
+                % Write the timestamp and information to the file
+                fprintf(fileID, '%s\n================================================\nCurrent Fast Movement X Step: %s\nnCurrent Fast Movement Y Step: %s\n\n\n', currentDateTimeText,XY_factor);
+
+                
+                case "Read"
+                fileID = fopen(filename, 'rt');
+                if fileID == -1
+                    error('Failed to open the file.');
+                end
+                
+                % Read the entire file into a single string
+                fileContent = fread(fileID, '*char')';
+                
+                % Split the content into lines
+                lines = strsplit(fileContent, newline);
+                
+                % Initialize variables to store the last three non-empty lines
+                lastLine = '';
+                secondLastLine = '';
+               
+                
+                nonEmptyCount = 0;  % Counter for non-empty lines
+                
+                % Loop through the lines in reverse order
+                for i = length(lines):-1:1
+                    if ~isempty(strtrim(lines{i}))
+                        nonEmptyCount = nonEmptyCount + 1;
+                        if nonEmptyCount == 1
+                            lastLine = lines{i};
+                        elseif nonEmptyCount == 2
+                            secondLastLine = lines{i};
+                              % Stop after finding the second-to-last non-empty line
+                        end
+                    end
+                    % Split the string into words
+                    words = strsplit(lastLine);
+                    % Extract the last word
+                    Y_Factor = words{end};
+                    % Split the string into words
+                    words = strsplit(secondLastLine);
+                    % Extract the last word
+                    X_Factor = words{end};
+                end
+                
+                % Convert the last and third-to-last lines to numbers
+                Read_XY_factor = struct("X_factor",str2num(X_Factor),"Y_factor",str2num(Y_Factor)); 
+                   
+            end
+            if Read_Write == "Write"
+                Read_XY_factor = ''; 
+            end
+            fclose(fileID);
+        
+        end
+      
         % Useful Convenience Functions  
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         function AddPathFunc(obj,Device)
@@ -2957,8 +3069,7 @@ classdef functionsContainer
                 case "LAB"
                     directoryPath_Funcs = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
                     directoryPath_LED = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\LED_Find_Images"; 
-                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Python_Scripts";
-
+                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools";
                     addpath(directoryPath_Funcs,directoryPath_LED,directoryPath_Scripts);
               
                 case "HOME_PC"
