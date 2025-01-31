@@ -3435,6 +3435,7 @@ classdef functionsContainer
                         end
                     
                     background_images{i} = img; % Store in cell array
+                    
                     end
                     
                     % assigning backgrounds to proper variables 
@@ -3461,6 +3462,9 @@ classdef functionsContainer
                     
                     % averaging out and subtracting background
                     bckgrnd_avg = (bckgrnd_sum_1 + bckgrnd_sum_2 + bckgrnd_sum_3)/3;
+                    % saving background_avg into a mat file to use later 
+                    save("Spectrometer_Settings.mat","bckgrnd_avg","-append"); 
+                    
                     spectrum_sum = spectrum_sum - bckgrnd_avg ;
                     spectrum_sum = spectrum_sum/2;
     
@@ -3607,6 +3611,42 @@ classdef functionsContainer
                 imwrite(UI_Position_Img,full_pathway)
             end
 
+        end
+    
+        function [Emission_Reading_Img,spectrum_sum,wvlength] = ASI_Live_Feed_Snapping(obj,vid_ASI,src_ASI,bckgrnd_avg)
+        
+            
+            % snapping a photo and gray scaling it 
+            Emission_Reading_Img = getsnapshot(vid_ASI);
+            if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
+                Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
+            end
+
+            %Highest-pixel based threshold:
+            auto_thresh = max(Emission_Reading_Img,[],"all")*0.3; 
+            
+            % Apply threshold
+            filtered_img = Emission_Reading_Img;
+            filtered_img(Emission_Reading_Img <= auto_thresh) = 0;
+
+             % Find central row with maximum intensity
+            intensity_per_row = sum(filtered_img, 2);
+            [~, central_row] = max(intensity_per_row);
+
+            % Auto-size vertical window
+            window_size = round(height*0.15); % 15% below and above the central_row 
+            valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
+
+            % Sum spectrum with automated window
+            spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
+            
+            spectrum_sum = spectrum_sum - bckgrnd_avg ;
+            spectrum_sum = spectrum_sum/2;
+    
+            % Init wavelength
+            wvlength = linspace(wvlngth_start, wvlngth_end, size(filtered_img, 2));
+
+        
         end
     end
 end
