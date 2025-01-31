@@ -1308,11 +1308,11 @@ classdef functionsContainer
                 % centroid,copycentroid - return a m x 2 matrix consisting of the x and y positions of the QD centroids 
                 % Mask, Mask_scaled - logical matrices used for creating the ROI within the frame 
 
-            Img = imread(I);
-            Img = im2gray(Img);
+            Img = im2gray(I);
             grayImage = imresize(Img, scaling);
             sizeImg = size(grayImage);
             sizeImgScaled = size(Img);
+            sizeImgScaled = flipud(sizeImgScaled); 
 
 
             % Get coordinates of the circle.
@@ -3257,7 +3257,7 @@ classdef functionsContainer
 
         % Camera Related Functions (setting up, snapping, etc) 
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        function [vid_ASI,src_ASI,vid_UI,src_UI] = ASI_UI_CameraInit(obj,ASI_Settings,UI_Settings)
+        function [vid_ASI,src_ASI,vid_UI,src_UI,camInfo] = ASI_UI_CameraInit(obj,ASI_Settings,UI_Settings)
         %ASI_UI_CAMERAINIT Initialize and configure ASI and UI cameras for imaging
         %   This function detects connected cameras, identifies ASI and UI devices,
         %   establishes video connections, and configures camera parameters.
@@ -3304,7 +3304,8 @@ classdef functionsContainer
             deviceName = camInfo.DeviceInfo(i).DeviceName; % Get device name
             fprintf('Camera %d: ID = %d, Name = %s\n', i, deviceID, deviceName);
             if contains(deviceName,"ASI") %  checks to see if the detected device is the ASI camera
-                ASI_Device_ID = i; 
+                ASI_Device_ID = i;
+                camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_1280x960'; 
                 fprintf("found ASI (spectrometer camera)\n")
             elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
                 UI_Device_ID = i;
@@ -3315,7 +3316,7 @@ classdef functionsContainer
         end
         
         % establishing connection and parameters of ASI Device 
-        vid_ASI = videoinput(adaptor, ASI_Device_ID,"RGB8_6248x4176"); % function can take a third input to specify formatting (ASK Sreesh) 
+        vid_ASI = videoinput(adaptor, ASI_Device_ID); % function can take a third input to specify formatting (ASK Sreesh) 
         src_ASI = getselectedsource(vid_ASI);
         %all_props_ASI = propinfo(vid_ASI); shows all settings user can change 
         
@@ -3377,7 +3378,7 @@ classdef functionsContainer
 
             switch ImgType
                 case "Background"
-                    
+                    start(vid_ASI)
                     % Capture and save background images
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
@@ -3386,7 +3387,7 @@ classdef functionsContainer
                         imwrite(background_img, full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
                     end
-
+                    stop(vid_ASI)
                 case "Spectrometer"
 
                     %Parameters for different gratings
@@ -3450,6 +3451,7 @@ classdef functionsContainer
                     [~, central_row] = max(intensity_per_row);
                     
                     % Auto-size vertical window
+                    [height,width] = size(img); 
                     window_size = round(height*0.15); % 15% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
@@ -3593,6 +3595,8 @@ classdef functionsContainer
         %   - Saves the image to a predefined directory if `SaveImg` is "Yes".
         %   - The saved image is named based on the `QD_ID` and timestamp.
         %
+            % turning off vertical and horizontal flip 
+
             
             % fetching today's date
             date = Fetch_Date(obj); 
@@ -3608,6 +3612,7 @@ classdef functionsContainer
 
             % Evaluating boolean to see if photo gets saved
             if SaveImg == "Yes"
+                UI_Position_Img = flipud(UI_Position_Img);
                 imwrite(UI_Position_Img,full_pathway)
             end
 
