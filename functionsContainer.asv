@@ -3534,14 +3534,14 @@ classdef functionsContainer
 
                     % text file creation 
                     data_matrix = [wvlength;spectrum_sum];
-                    specific_filename = sprintf("\\QD_Text_File_Data\\[%d %d]_%dmm_gratting.txt",QD_ID,Spectrometer_Gratting); 
+                    specific_filename = sprintf("\\QD_Text_File_Data\\[%d %d]_%dmm_gratting_Data_Text_File.txt",QD_ID,Spectrometer_Gratting); 
                     text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test,specific_filename);
 
                     % Checking if FSS is involved 
                     if contains(FSS,"FSS")
                         FSS_Text = strsplit(FSS); 
                         ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%d_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%d_degrees.tcx",QD_ID,Spectrometer_Gratting,FSS_Text(2));
                         text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
                     end
 
