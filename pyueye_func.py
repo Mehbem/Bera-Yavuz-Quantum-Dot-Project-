@@ -344,13 +344,13 @@ def exit_camera(pyueye_initialization_return):
     print("Camera has exited")
     print("END")
 
-# t_start = time.time()
-# pyueye_initialization_return = init_camera()
-# t_end = time.time()
+t_start = time.time()
+pyueye_initialization_return = init_camera()
+t_end = time.time()
 
 # snap_image(pyueye_initialization_return, 'success_ueye.jpg')
-# # print('Time for initializing camera', (t_end - t_start))
+# print('Time for initializing camera', (t_end - t_start))
 
-# # live_video(pyueye_initialization_return)
+live_video(pyueye_initialization_return)
 
 # exit_camera(pyueye_initialization_return)
