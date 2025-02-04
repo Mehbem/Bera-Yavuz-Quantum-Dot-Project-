@@ -1312,7 +1312,7 @@ classdef functionsContainer
             grayImage = imresize(Img, scaling);
             sizeImg = size(grayImage);
             sizeImgScaled = size(Img);
-            sizeImgScaled = flipud(sizeImgScaled); 
+         
 
 
             % Get coordinates of the circle.
@@ -3383,7 +3383,7 @@ classdef functionsContainer
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
                         full_pathway = fullfile(pathway_main, filename_background_saved);
-                        background_img = getsnapshot(vid_ASI); % Capture frame
+                        background_img = getdata(vid_ASI,1); % Capture frame
                         imwrite(background_img, full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
                     end
@@ -3618,11 +3618,10 @@ classdef functionsContainer
 
         end
     
-        function [Emission_Reading_Img,spectrum_sum,wvlength] = ASI_Live_Feed_Snapping(obj,vid_ASI,src_ASI,bckgrnd_avg)
+        function [spectrum_sum] = ASI_Live_Feed_Snapping(obj,Emission_Reading_Img,bckgrnd_avg)
         
             
-            % snapping a photo and gray scaling it 
-            Emission_Reading_Img = getsnapshot(vid_ASI);
+            % gray scaling photo
             if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                 Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
             end
@@ -3648,8 +3647,6 @@ classdef functionsContainer
             spectrum_sum = spectrum_sum - bckgrnd_avg ;
             spectrum_sum = spectrum_sum/2;
     
-            % Init wavelength
-            wvlength = linspace(wvlngth_start, wvlngth_end, size(filtered_img, 2));
 
         
         end
