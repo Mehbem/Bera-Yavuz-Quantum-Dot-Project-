@@ -15,14 +15,9 @@ UI_Settings = "";
 
 src_UI.VerticalFlip = 'on'; 
 
-exposure = propinfo(src_UI,"Exposure");
-src_UI.ExposureMode = "manual"; 
-src_UI.GainMode = "manual";
-src_UI.ContrastMode = "manual";
+exposure = propinfo(src_UI,"ExposureMode");
 
-src_UI.BacklightCompensation = "on"; 
 vid_UI.ReturnedColorSpace = 'grayscale'; 
-
 
 % Assuming vid_UI is correctly initialized
 screenSize = get(0, 'ScreenSize'); % gets pixel resolution of screen

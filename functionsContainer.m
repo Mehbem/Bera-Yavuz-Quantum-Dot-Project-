@@ -3604,16 +3604,25 @@ classdef functionsContainer
             
             % Defining the pathway for where the UI Imgs end up 
             pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Position_uEYE"; 
-            file_name = sprintf("[%d %d]_NanoWireChip_Pos.jpg",QD_ID);
-            full_pathway = fullfile(pathway_main,file_name);
             
+
             % Capturing a snap of the UI camera
             UI_Position_Img = getsnapshot(vid_UI);
 
             % Evaluating boolean to see if photo gets saved
             if SaveImg == "Yes"
-                UI_Position_Img = flipud(UI_Position_Img);
+                
+                file_name = sprintf("[%d %d]_NanoWireChip_Pos.jpg",QD_ID);
+                full_pathway = fullfile(pathway_main,file_name);
                 imwrite(UI_Position_Img,full_pathway)
+
+            elseif contains(SaveImg,"No")
+            else
+
+                file_name_debug = sprintf("%s.jpg",SaveImg); 
+                full_pathway_debug = fullfile(pathway_main,file_name_debug); 
+                imwrite(UI_Position_Img,full_pathway_debug)
+
             end
 
         end
