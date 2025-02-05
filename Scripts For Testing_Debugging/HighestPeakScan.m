@@ -36,6 +36,19 @@ y_rows = 10;
 % Defining an empty 0 0 matrix for tracking location 
 relative_loc = [0 0];
 
+% Define the ID900 IP address
+ip_address = '169.254.102.137'; % Change this to match your device's IP
+
+% Open a TCP connection
+t = tcpclient(ip_address, 5555); % Default SCPI port
+
+% Configure the input channel
+writeline(t, 'INPU1:ENAB ON'); % Enable input 1
+writeline(t, 'INPU1:THREshold 100mV'); % Set threshold (adjust as needed)
+writeline(t, 'INPU1:EDGE RISING'); % Set to trigger on rising edge
+writeline(t, 'INPU1:MODE ACCUM'); % Set counter mode to accumulate counts
+writeline(t, 'INPU1:RESEt'); % Reset the counter before starting
+
 
 % Going to starting position 
 fprintf(ANC300,Y_movement_seria_comd_init)
@@ -43,49 +56,60 @@ MyFuncs.StepQueue(Init_Y_Pos,Frequency)
 fprintf(ANC300,X_movement_seria_comd_init)
 MyFuncs.StepQueue(Init_X_Pos,Frequency)
 
+
+
+
 % get photon count 
-init_photon_count
+writeline(t, 'INPU1:RESEt'); % Reset counter
+pause(0.05); % Short delay to ensure fresh count
+writeline(t, 'INPU1:COUNter?'); 
+init_photon_count = str2double(readline(t)); % Read current photon count
+ 
 
 data_table = table(relative_loc,init_photon_count,'VariableNames', {'Positions', 'PeakCounts'}); 
 
 
 
-
 for y_move = 1:y_rows
-        if y_move ~=1
-            relative_loc = relative_loc + [0 1]; 
-            % Movement to next y_row
-            fprintf(ANC300,Y_movement_seria_comd_forward)
-            MyFuncs.StepQueue(Y_Step,Frequency)
-            % reading photon count
-            
-            % update table
-            new_row = {relative_loc,photon_count};
-            data_table = [data_table;new_row]; 
-        end
+    if y_move ~= 1
+        relative_loc = relative_loc + [0 1]; 
+        fprintf(ANC300, Y_movement_seria_comd_forward);
+        MyFuncs.StepQueue(Y_Step, Frequency);
+
+        % Reset & Read photon count
+        writeline(t, 'INPU1:RESEt'); % Reset counter
+        pause(0.05); % Allow time for new counts
+        writeline(t, 'INPU1:COUNter?'); 
+        photon_count = str2double(readline(t)); % Read current photon count
+
+        % Update table
+        new_row = {relative_loc, photon_count};
+        data_table = [data_table; new_row]; 
+    end
+
     for x_move = 1:x_rows
-        if mod(x_move,2) == 0
+        if mod(x_move, 2) == 0
             relative_loc = relative_loc + [1 0];
 
-            fprintf(ANC300,X_movement_seria_comd_back)
-            MyFuncs.StepQueue(X_Step,Frequency)
-            % reading photon count
-
-            % update table
-            new_row = {relative_loc,photon_count};
-            data_table = [data_table;new_row]; 
+            fprintf(ANC300, X_movement_seria_comd_back);
+            MyFuncs.StepQueue(X_Step, Frequency);
 
         else
             relative_loc = relative_loc + [0 -1];
-            fprintf(ANC300,X_movement_seria_comd_forward)
-            MyFuncs.StepQueue(X_Step,Frequency)
-            % reading photon count
 
-             % update table
-            new_row = {relative_loc,photon_count};
-            data_table = [data_table;new_row]; 
-
+            fprintf(ANC300, X_movement_seria_comd_forward);
+            MyFuncs.StepQueue(X_Step, Frequency);
         end
+
+        % Reset & Read photon count after each step
+        writeline(t, 'INPU1:RESEt'); % Reset counter
+        pause(0.05); % Short delay to ensure fresh count
+        writeline(t, 'INPU1:COUNter?'); 
+        photon_count = str2double(readline(t)); % Read current photon count
+
+        % Update table
+        new_row = {relative_loc, photon_count};
+        data_table = [data_table; new_row]; 
     end
 end
 
