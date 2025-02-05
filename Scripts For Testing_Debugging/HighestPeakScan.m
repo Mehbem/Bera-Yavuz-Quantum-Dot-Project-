@@ -13,16 +13,18 @@ fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20"); fprintf(ANC300,"setm 1
 fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20"); fprintf(ANC300,"setm 2 stp");  
 Frequency = 20; 
 
+% Initilize photon detector 
+tc = py.ID900_Func.init_ID900();
 
 % defining the smallest movement margin (ANC300 steps)
-X_Step = 2;
-Y_Step = 2;
+X_Step = 4;  init_move_mult_X = 8;
+Y_Step = 4;  init_move_mult_Y = 8;
 
 % Defining starting position Movement
-Init_Y_Pos = 5*Y_Step;
+Init_Y_Pos = init_move_mult_Y*Y_Step;
 Y_movement_seria_comd_init = sprintf("stepd 2 %d",Init_Y_Pos);
 
-Init_X_Pos = 5*X_Step;
+Init_X_Pos = init_move_mult_X*X_Step;
 X_movement_seria_comd_init = sprintf("stepd 1 %d",Init_X_Pos);
 
 % Defining smallest stepping Movemment
@@ -30,25 +32,11 @@ Y_movement_seria_comd_back = sprintf("stepd 2 %d",Y_Step);Y_movement_seria_comd_
 X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step);X_movement_seria_comd_forward = sprintf("stepu 1 %d",X_Step);
 
 % Defining region to scan
-x_rows = 10;
-y_rows = 10;
+x_rows = init_move_mult_X*2;
+y_rows = init_move_mult_Y*2;
 
 % Defining an empty 0 0 matrix for tracking location 
 relative_loc = [0 0];
-
-% Define the ID900 IP address
-ip_address = '169.254.102.137'; % Change this to match your device's IP
-
-% Open a TCP connection
-t = tcpclient(ip_address, 5555); % Default SCPI port
-
-% Configure the input channel
-writeline(t, 'INPU1:ENAB ON'); % Enable input 1
-writeline(t, 'INPU1:THREshold 100mV'); % Set threshold (adjust as needed)
-writeline(t, 'INPU1:EDGE RISING'); % Set to trigger on rising edge
-writeline(t, 'INPU1:MODE ACCUM'); % Set counter mode to accumulate counts
-writeline(t, 'INPU1:RESEt'); % Reset the counter before starting
-
 
 % Going to starting position 
 fprintf(ANC300,Y_movement_seria_comd_init)
@@ -60,10 +48,8 @@ MyFuncs.StepQueue(Init_X_Pos,Frequency)
 
 
 % get photon count 
-writeline(t, 'INPU1:RESEt'); % Reset counter
-pause(0.05); % Short delay to ensure fresh count
-writeline(t, 'INPU1:COUNter?'); 
-init_photon_count = str2double(readline(t)); % Read current photon count
+init_photon_count = py.ID900_Func.query_photon_counter(tc); 
+
  
 
 data_table = table(relative_loc,init_photon_count,'VariableNames', {'Positions', 'PeakCounts'}); 
@@ -76,11 +62,8 @@ for y_move = 1:y_rows
         fprintf(ANC300, Y_movement_seria_comd_forward);
         MyFuncs.StepQueue(Y_Step, Frequency);
 
-        % Reset & Read photon count
-        writeline(t, 'INPU1:RESEt'); % Reset counter
-        pause(0.05); % Allow time for new counts
-        writeline(t, 'INPU1:COUNter?'); 
-        photon_count = str2double(readline(t)); % Read current photon count
+        % Read photon count
+        photon_count = py.ID900_Func.query_photon_counter(tc); 
 
         % Update table
         new_row = {relative_loc, photon_count};
@@ -88,24 +71,21 @@ for y_move = 1:y_rows
     end
 
     for x_move = 1:x_rows
-        if mod(x_move, 2) == 0
-            relative_loc = relative_loc + [1 0];
+        if mod(y_move, 2) == 0
+            relative_loc = relative_loc + [0 -1];
 
             fprintf(ANC300, X_movement_seria_comd_back);
             MyFuncs.StepQueue(X_Step, Frequency);
 
         else
-            relative_loc = relative_loc + [0 -1];
+            relative_loc = relative_loc + [0 +1];
 
             fprintf(ANC300, X_movement_seria_comd_forward);
             MyFuncs.StepQueue(X_Step, Frequency);
         end
 
-        % Reset & Read photon count after each step
-        writeline(t, 'INPU1:RESEt'); % Reset counter
-        pause(0.05); % Short delay to ensure fresh count
-        writeline(t, 'INPU1:COUNter?'); 
-        photon_count = str2double(readline(t)); % Read current photon count
+        % Read photon count
+        photon_count = py.ID900_Func.query_photon_counter(tc); 
 
         % Update table
         new_row = {relative_loc, photon_count};
