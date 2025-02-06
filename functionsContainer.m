@@ -1210,13 +1210,13 @@ classdef functionsContainer
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,X_Stepping,Frequency); 
+                    StepQueue(obj,X_Stepping,Frequency); 
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepu 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end                    
-                    time_to_pause = StepQueue(obj,Y_Stepping,Frequency);
+                    StepQueue(obj,Y_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
 
@@ -1225,13 +1225,13 @@ classdef functionsContainer
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,X_Stepping,Frequency);
+                    StepQueue(obj,X_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepu 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,Y_Stepping,Frequency);
+                    StepQueue(obj,Y_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
                 case 'topright'
@@ -1239,13 +1239,13 @@ classdef functionsContainer
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,X_Stepping,Frequency);
+                    StepQueue(obj,X_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,Y_Stepping,Frequency);
+                    StepQueue(obj,Y_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
                 case 'topleft'
@@ -1253,13 +1253,13 @@ classdef functionsContainer
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,X_Stepping,Frequency);
+                    StepQueue(obj,X_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
-                    time_to_pause = StepQueue(obj,Y_Stepping,Frequency);
+                    StepQueue(obj,Y_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
             end
        
@@ -2218,6 +2218,7 @@ classdef functionsContainer
             Iterations = Iterations + 1; 
 
             % Snapping Photo 
+            
             [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
         
 
@@ -2257,6 +2258,7 @@ classdef functionsContainer
             %fprintf("%s\n",direction)
             % Moving to the startingQD
             Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor,y_factor)
+            pause(0.2)
             if Iterations > 50
                 %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
                 break
@@ -2352,7 +2354,7 @@ classdef functionsContainer
             % Outputs:
                 % No output varialbe as sole purpose of function is to act as a small delay 
 
-            Error_Margin_Factor = 0.2; % in terms of seconds so change as appropriately 
+            Error_Margin_Factor = 0.3; % in terms of seconds so change as appropriately 
             time_to_pause = (Step_num/frequency) + Error_Margin_Factor; % calculating the time needed for pausing between lines 
             pause(time_to_pause) 
         end
@@ -3305,7 +3307,7 @@ classdef functionsContainer
             fprintf('Camera %d: ID = %d, Name = %s\n', i, deviceID, deviceName);
             if contains(deviceName,"ASI") %  checks to see if the detected device is the ASI camera
                 ASI_Device_ID = i;
-                camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_1280x960'; 
+                camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_6248x4176';%'RGB8_1280x960'; 
                 fprintf("found ASI (spectrometer camera)\n")
             elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
                 UI_Device_ID = i;
@@ -3316,7 +3318,7 @@ classdef functionsContainer
         end
         
         % establishing connection and parameters of ASI Device 
-        vid_ASI = videoinput(adaptor, ASI_Device_ID); % function can take a third input to specify formatting (ASK Sreesh) 
+        vid_ASI = videoinput(adaptor, ASI_Device_ID,camInfo.DeviceInfo(ASI_Device_ID).DefaultFormat); % function can take a third input to specify formatting (ASK Sreesh) 
         src_ASI = getselectedsource(vid_ASI);
         %all_props_ASI = propinfo(vid_ASI); shows all settings user can change 
         
@@ -3359,6 +3361,7 @@ classdef functionsContainer
         %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
         %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
         %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
+        %   FSS                     - Specifies its for fine struct splitting (FSS degrees #)
         %
         % Outputs:
         %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
@@ -3386,6 +3389,7 @@ classdef functionsContainer
                         background_img = getdata(vid_ASI,1); % Capture frame
                         imwrite(background_img, full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
+                        pause(1)
                     end
                     stop(vid_ASI)
                 case "Spectrometer"
@@ -3447,12 +3451,13 @@ classdef functionsContainer
 
                    
                     % Find central row with maximum intensity
-                    intensity_per_row = sum(filtered_img, 2);
-                    [~, central_row] = max(intensity_per_row);
+                    %intensity_per_row = sum(filtered_img, 2);
+                    %[~, central_row] = max(intensity_per_row);
                     
                     % Auto-size vertical window
                     [height,width] = size(img); 
-                    window_size = round(height*0.15); % 15% below and above the central_row 
+                    central_row = height/2; 
+                    window_size = round(height*0.3); % 15% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
@@ -3529,7 +3534,7 @@ classdef functionsContainer
                         'Margin', 3);
                     
                     % Set title and labels
-                    title_font = sprintf("QD Spectrum Plot: [%d %d]",[1 1]);
+                    title_font = sprintf("QD Spectrum Plot: [%d %d]",QD_ID);
                     title(title_font);
                     xlabel('Wavelength [nm]');
                     ylabel('Arb. Counts');

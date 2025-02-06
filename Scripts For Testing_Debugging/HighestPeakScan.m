@@ -17,8 +17,9 @@ Frequency = 20;
 tc = py.ID900_Func.init_ID900();
 
 % defining the smallest movement margin (ANC300 steps)
-X_Step = 4;  init_move_mult_X = 8;
-Y_Step = 4;  init_move_mult_Y = 8;
+X_Step = 10;  init_move_mult_X = 6;
+Y_Step = 10;  init_move_mult_Y = 6;
+
 
 % Defining starting position Movement
 Init_Y_Pos = init_move_mult_Y*Y_Step;
@@ -27,13 +28,19 @@ Y_movement_seria_comd_init = sprintf("stepd 2 %d",Init_Y_Pos);
 Init_X_Pos = init_move_mult_X*X_Step;
 X_movement_seria_comd_init = sprintf("stepd 1 %d",Init_X_Pos);
 
+% Perimeter of shape
+X_edge = Init_X_Pos*2;
+Y_edge = Init_Y_Pos*2; 
+
+
 % Defining smallest stepping Movemment
 Y_movement_seria_comd_back = sprintf("stepd 2 %d",Y_Step);Y_movement_seria_comd_forward = sprintf("stepu 2 %d",Y_Step);
 X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step);X_movement_seria_comd_forward = sprintf("stepu 1 %d",X_Step);
 
 % Defining region to scan
-x_rows = init_move_mult_X*2;
-y_rows = init_move_mult_Y*2;
+x_rows = X_edge/X_Step;
+y_rows = Y_edge/Y_Step;
+
 
 % Defining an empty 0 0 matrix for tracking location 
 relative_loc = [0 0];
@@ -72,13 +79,13 @@ for y_move = 1:y_rows
 
     for x_move = 1:x_rows
         if mod(y_move, 2) == 0
-            relative_loc = relative_loc + [0 -1];
+            relative_loc = relative_loc + [-1 0];
 
             fprintf(ANC300, X_movement_seria_comd_back);
             MyFuncs.StepQueue(X_Step, Frequency);
 
         else
-            relative_loc = relative_loc + [0 +1];
+            relative_loc = relative_loc + [+1 0];
 
             fprintf(ANC300, X_movement_seria_comd_forward);
             MyFuncs.StepQueue(X_Step, Frequency);
@@ -95,7 +102,10 @@ end
 
 
 
+
+
 [A, i] = max(data_table.PeakCounts);
 
 position_to_return = data_table.Positions(i,:);
 
+griddata(data_table.Positions(:,1),data_table.Positions(:,2),data_table.PeakCounts)
