@@ -2176,7 +2176,7 @@ classdef functionsContainer
             
         end
  
-        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,PhotoType,QD_counter,vid_UI,src_UI,accuracy_margin)
+        function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,accuracy_margin)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
 
 
