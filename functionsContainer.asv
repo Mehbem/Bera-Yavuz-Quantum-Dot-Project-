@@ -3667,7 +3667,7 @@ classdef functionsContainer
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD)
+        function brightest_spot = Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD)
         
         % Defining different movement options 
         loop_interval_X = X_Step_num_big/X_Step_num_small;
@@ -3729,9 +3729,9 @@ classdef functionsContainer
             
                     % Update Message
                     fprintf("Completed %d/%d",percentage_complete,total_amount)
-                    if photon_count > 0.95*max_photon_count & max_photon_count ~= 0 
+                    if photon_count > 0.8*max_photon_count & max_photon_count ~= 0 
                         break_all = true; 
-                        breakS
+                        break
                     end
                 end
             
@@ -3848,12 +3848,12 @@ classdef functionsContainer
             
             
             Current_angle = sprintf('Angle: %d \n', angle(rot_count));
-            fprintf(Current_angle)
+            
             pause(1)
             
             % taking a snap at every respective angle 
-            file_name = sprintf('FSS %d',angle(rot_count)); 
-            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_ID,file_name)            
+            file_name = sprintf('QD_Spec_Plot_[%d %d]_%d_Degrees',QD_ID,angle(rot_count)); 
+            ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)            
             end
 
         end

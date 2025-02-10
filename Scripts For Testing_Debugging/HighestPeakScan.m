@@ -79,7 +79,7 @@ for num_scans = 1:2
             percentage_complete = percentage_complete + 1;
     
             % Update Message
-            fprintf("Completed %d//%d",percentage_complete,total_amount)
+            fprintf("Completed %d/%d",percentage_complete,total_amount)
             if photon_count > 0.8*max_photon_count & max_photon_count ~= 0 
                 break_all = true; 
                 break
@@ -110,7 +110,7 @@ for num_scans = 1:2
             percentage_complete = percentage_complete + 1; 
     
              % Update Message
-            fprintf("Completed %d//%d",percentage_complete,total_amount)
+            fprintf("Completed %d/%d",percentage_complete,total_amount)
             if photon_count > 0.8*max_photon_count & max_photon_count ~= 0 
                 break_all = true; 
                 break
