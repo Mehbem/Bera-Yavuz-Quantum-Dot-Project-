@@ -37,3 +37,5 @@ xlabel('X');
 ylabel('Y');
 
 title('Raster Scan Photon Count');
+            file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD_Counter); 
+            saveas(gca,file_name)

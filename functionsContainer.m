@@ -3488,7 +3488,7 @@ classdef functionsContainer
                     if contains(FSS,"FSS")
                         FSS_Text = strsplit(FSS); 
                         ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%d_degrees",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Text(2));
                         qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
                     end
                     
@@ -3552,7 +3552,7 @@ classdef functionsContainer
                     if contains(FSS,"FSS")
                         FSS_Text = strsplit(FSS); 
                         ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%d_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
                         text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
                     end
 

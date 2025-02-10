@@ -2,12 +2,13 @@
             % Filtering Settings 
             scaling = 0.5; 
             sigma_flatfield = 60; 
-            Salt_pepper_pixel_factor = [25 25]; 
+            Salt_pepper_pixel_factor = [5 5]; 
 
             [UI_Position_Img] = MyFuncs.UI_Snap_Img(vid_UI,src_UI,"LED_Background_Debug",""); 
 
             % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             
+            figure()
                      
             % Scailing Image for faster processing  
             grayImage = imresize(UI_Position_Img, scaling);
@@ -17,7 +18,8 @@
             
             % Making the shadow across the image more balanced 
             FlatFieldAdjustedImg = imflatfield(grayImage,sigma_flatfield);
-            
+            imshow(FlatFieldAdjustedImg)
+
             % Getting rid of the salt-pepper noise 
             imgFiltered = medfilt2(FlatFieldAdjustedImg,Salt_pepper_pixel_factor);
             imshow(imgFiltered)
@@ -33,7 +35,7 @@
             AllAreas = [propertiesImage.Area]; 
             AllCircularities = [propertiesImage.Circularity];
             AllCentroids = vertcat(propertiesImage.Centroid); 
-            ValidRegions = find((AllCircularities > 0.9) & AllAreas > 300);
+            ValidRegions = find((AllCircularities > 0.9) & AllAreas > 100);
             LED_Spot_BW = ismember(labelledImage,ValidRegions);
 
             LED_centroid = AllCentroids(ValidRegions,:);

@@ -4,7 +4,8 @@
 MyFuncs = functionsContainer;
 MyFuncs.AddPathFunc("LAB"); 
 % Establishing serialconnetion with ANC300 device
-%ANC300 = serialport("COM7",9600); % Change X to the COM port connected
+ANC300 = serialport("COM7",9600); % Change X to the COM port connected
+ell_motor = serialport("COM10",9600); % Establishing a serialconnection with the HWP motor
 
 fprintf(ANC300,"setm 3 gnd"); 
 fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20"); fprintf(ANC300,"setm 1 stp"); 
@@ -33,11 +34,13 @@ X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step_num_small+1);
 % Defining an empty 0 0 matrix for tracking location 
 relative_loc = [0 0];
 max_photon_count = 0; 
-percentage_complete = 0; 
+percentage_complete = 0;
+QD_counter = [1 1];
+Spectrometer_Gratting = 1800; 
 total_amount = loop_interval_Y*4*loop_interval_X+loop_interval_Y*2; 
 break_all = false; 
 
-
+MyFuncs.Precision_Locking_Matlab(ANC300,QD_counter,vid_UI,src_UI,20)
 
 % get initial photon count 
 init_photon_count = py.ID900_Func.query_photon_counter(tc); 
@@ -127,16 +130,44 @@ for num_scans = 1:2
     max_photon_count = max(data_table.PeakCounts); 
     original_data_table = data_table; 
     if num_scans < 2
-        QD_counter = [1 1];
+
         MyFuncs.Precision_Locking_Matlab(ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
         pause(0.2)
     end
 end
 
+
+            % defining angle of rotation 
+            angle = 0:5:360;
+
+            % for loop for rotating motor 
+            for rot_count = 1:length(angle)
+
+            % Defining the movement serial code for the rotation 
+            angle_hxd = dec2hex(floor(mod(angle(rot_count),360)*39822/100), 8);
+            input_str = "1ma" + angle_hxd; % "2" before ma is to be get from the ELLO software from thorlabs.
+            
+            % Commiting Command for movement 
+            fprintf(ell_motor, input_str);
+            
+            
+            Current_angle = sprintf('Angle: %d \n', angle(rot_count));
+            fprintf(Current_angle)
+            pause(1)
+            
+            % taking a snap at every respective angle 
+            file_name = sprintf('FSS %d',angle(rot_count)); 
+            MyFuncs.ASI_Snap_Img(vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_counter,file_name)
+            end
+
+
+
+
+
 % Extract data from table
-X_Coords = data_table{:,'Positions'}(:,1);
-Y_Coords = data_table{:,'Positions'}(:,2);
-Photon_count_vals = data_table{:,'PeakCounts'};
+X_Coords = original_data_table{:,'Positions'}(:,1);
+Y_Coords = original_data_table{:,'Positions'}(:,2);
+Photon_count_vals = original_data_table{:,'PeakCounts'};
 
 
 % Extract unique X and Y values (assuming evenly spaced grid)
@@ -174,5 +205,6 @@ xlabel('X');
 ylabel('Y');
 
 title('Raster Scan Photon Count');
-
+            file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD_counter); 
+            saveas(gca,file_name)
 
