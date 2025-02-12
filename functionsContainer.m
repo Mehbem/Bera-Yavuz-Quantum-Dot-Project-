@@ -3457,11 +3457,11 @@ classdef functionsContainer
                     % Auto-size vertical window
                     [height,width] = size(img); 
                     central_row = height/2; 
-                    window_size = round(height*0.3); % 15% below and above the central_row 
+                    window_size = round(height*0.3); % 30% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
-                    % Sum spectrum with automated window
+                    % Sum spectrum within window
                     spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
                     bckgrnd_sum_1 = sum(double(bckgrnd_img_1(valid_rows, :)), 1);
                     bckgrnd_sum_2 = sum(double(bckgrnd_img_2(valid_rows, :)), 1);
@@ -3473,7 +3473,7 @@ classdef functionsContainer
                     save("Spectrometer_Settings.mat","bckgrnd_avg","-append"); 
                     
                     spectrum_sum = spectrum_sum - bckgrnd_avg ;
-                    spectrum_sum = spectrum_sum/2;
+                    
     
                     % Init wavelength
                     wvlength = linspace(wvlngth_start, wvlngth_end, size(filtered_img, 2));
@@ -3487,9 +3487,9 @@ classdef functionsContainer
                     % Checking if FSS is involved 
                     if contains(FSS,"FSS")
                         FSS_Text = strsplit(FSS); 
-                        ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
+                        latestFolder = find_latestFolder(obj,QD_ID);
                         Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Text(2));
-                        qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
+                        qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
                     
                     % Create a new figure
@@ -3549,11 +3549,9 @@ classdef functionsContainer
                     text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test,specific_filename);
 
                     % Checking if FSS is involved 
-                    if contains(FSS,"FSS")
-                        FSS_Text = strsplit(FSS); 
-                        ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
+                    if contains(FSS,"FSS")                      
                         Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
-                        text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
+                        text_file_pathway = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
 
                     % opening the text file 
@@ -3760,7 +3758,7 @@ classdef functionsContainer
             
                      % Update Message
                     fprintf("Completed %d/%d",percentage_complete,total_amount)
-                    if photon_count > 0.8*max_photon_count & max_photon_count ~= 0 
+                    if photon_count > 0.95*max_photon_count & max_photon_count ~= 0 
                         break_all = true; 
                         break
                     end
@@ -3857,6 +3855,66 @@ classdef functionsContainer
             end
 
         end
+        
+        function FSS_Folder_Creation(obj,QD)
+            % Fetching today's date
+            date = Fetch_Date(obj); % fetching today's date
+            date_test =  date + "_Test"; 
+            
 
+            
+            % Base folder path
+            ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
+            Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory);
+            
+            copy_number = 1;
+            
+            while true
+                % Generate folder name with the current copy number
+                folder_name = sprintf("QD_[%d %d]\\Copy_%d", QD(1), QD(2), copy_number);
+                folder_name = fullfile(text_file_pathway,folder_name,Quantum_Dot_Named_File); 
+                
+                % Check if the folder exists
+                if ~exist(folder_name, 'dir')
+                    mkdir(folder_name); % Create the folder if it does not exist
+                    break; % Exit the loop once a new folder is created
+                else
+                    copy_number = copy_number + 1; % Increment the copy number
+                end
+            end
+            
+            % Final assigned folder path
+            Specific_QD_FSS = folder_name;
+            disp("Created folder: " + Specific_QD_FSS);
+        end
+        
+        function latestFolder = find_latestFolder(obj,QD)
+            % Fetching today's date
+            date = Fetch_Date(obj); % fetching today's date
+            date_test =  date + "_Test"; 
+            
+
+            
+            % Base folder path
+            ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS");
+            Specific_QD_dir = sprintf("QD_[%d %d]",QD);
+            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Specific_QD_dir);
+
+            parentDir = text_file_pathway;
+            folders = dir(parentDir);
+                folders = folders([folders.isdir]); % Keep only directories
+                folders = folders(~ismember({folders.name}, {'.', '..'})); % Remove '.' and '..'
+                
+                if isempty(folders)
+                    error('No folders found in the specified directory.');
+                end
+            
+                % Sort by creation date (latest first)
+                [~, idx] = sort([folders.datenum], 'descend');
+                latestFolder = fullfile(parentDir, folders(idx(1)).name);
+                
+        end
+    
     end
 end
