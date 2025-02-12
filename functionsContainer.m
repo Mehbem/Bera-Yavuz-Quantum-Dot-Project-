@@ -3665,7 +3665,7 @@ classdef functionsContainer
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD)
+        function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD,ANC300,Frequency)
         
         % Defining different movement options 
         loop_interval_X = X_Step_num_big/X_Step_num_small;
@@ -3699,14 +3699,14 @@ classdef functionsContainer
             Y_move_forward = sprintf("stepd 2 %d",Y_Step_num_small);
             for i = 1:loop_interval_Y
                 fprintf(ANC300,Y_move_forward);
-                MyFuncs.StepQueue(Y_Step_num_small,Frequency)
+                StepQueue(obj,Y_Step_num_small,Frequency)
                 pause(0.1)
             end
             
             X_move_forward = sprintf("stepd 1 %d",X_Step_num_small);
             for i = 1:loop_interval_X
                 fprintf(ANC300,X_move_forward);
-                MyFuncs.StepQueue(X_Step_num_small,Frequency);
+                StepQueue(obj,X_Step_num_small,Frequency);
                 pause(0.1)
             end
         
@@ -3714,7 +3714,7 @@ classdef functionsContainer
                 if y_move ~= 1
                     relative_loc = relative_loc + [0 1]; 
                     fprintf(ANC300, Y_movement_seria_comd_forward);
-                    MyFuncs.StepQueue(X_Step_num_small, Frequency);
+                    StepQueue(obj,X_Step_num_small, Frequency);
                     pause(0.1)
             
                     % Read photon count
@@ -3738,13 +3738,13 @@ classdef functionsContainer
                         relative_loc = relative_loc + [-1 0];
             
                         fprintf(ANC300, X_movement_seria_comd_back);
-                        MyFuncs.StepQueue(X_Step_num_small, Frequency);
+                        StepQueue(obj,X_Step_num_small, Frequency);
                         pause(0.1)
                     else
                         relative_loc = relative_loc + [+1 0];
             
                         fprintf(ANC300, X_movement_seria_comd_forward);
-                        MyFuncs.StepQueue(X_Step_num_small, Frequency);
+                        StepQueue(obj,X_Step_num_small, Frequency);
                         pause(0.1)
                     end
             
@@ -3860,20 +3860,20 @@ classdef functionsContainer
             % Fetching today's date
             date = Fetch_Date(obj); % fetching today's date
             date_test =  date + "_Test"; 
-            
+
+    
 
             
             % Base folder path
             ASI_plots_directory = strcat(date_test, "\FSS_Measurements\Spectrometer_Plots_FSS\");
-            Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
             text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory);
             
             copy_number = 1;
             
             while true
                 % Generate folder name with the current copy number
-                folder_name = sprintf("QD_[%d %d]\\Copy_%d", QD(1), QD(2), copy_number);
-                folder_name = fullfile(text_file_pathway,folder_name,Quantum_Dot_Named_File); 
+                folder_name = sprintf("QD_[%d %d]\\Set_%d", QD(1), QD(2), copy_number);
+                folder_name = fullfile(text_file_pathway,folder_name); 
                 
                 % Check if the folder exists
                 if ~exist(folder_name, 'dir')
