@@ -3487,8 +3487,9 @@ classdef functionsContainer
                     % Checking if FSS is involved 
                     if contains(FSS,"FSS")
                         FSS_Text = strsplit(FSS); 
+                        FSS_Angle = FSS_Text{2}; 
                         latestFolder = find_latestFolder(obj,QD_ID);
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Angle);
                         qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
                     
@@ -3550,7 +3551,7 @@ classdef functionsContainer
 
                     % Checking if FSS is involved 
                     if contains(FSS,"FSS")                      
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Text(2));
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Angle);
                         text_file_pathway = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
 
@@ -3665,7 +3666,7 @@ classdef functionsContainer
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD,ANC300,Frequency)
+        function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD,ANC300,Frequency,vid_UI,src_UI)
         
         % Defining different movement options 
         loop_interval_X = X_Step_num_big/X_Step_num_small;
@@ -3674,7 +3675,7 @@ classdef functionsContainer
         % Defining smallest stepping Movemment
         Y_movement_seria_comd_forward = sprintf("stepu 2 %d",Y_Step_num_small);
         X_movement_seria_comd_forward = sprintf("stepu 1 %d",X_Step_num_small);
-        X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step_num_small+1);
+        X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step_num_small);
         
         
         % Defining an empty 0 0 matrix for tracking location 
@@ -3727,9 +3728,9 @@ classdef functionsContainer
             
                     % Update Message
                     fprintf("Completed %d/%d",percentage_complete,total_amount)
-                    if photon_count > 0.95*max_photon_count & max_photon_count ~= 0 
+                    if photon_count > 0.85*max_photon_count & max_photon_count ~= 0 
                         break_all = true; 
-                        breakS
+                        break
                     end
                 end
             
@@ -3775,11 +3776,12 @@ classdef functionsContainer
              
             if num_scans < 2
                 QD_counter = [1 1];
-                MyFuncs.Precision_Locking_Matlab(ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
+                Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
                 pause(0.2)
                 % assigning original data to a new variable to return later
                 % if needed
                 original_data_table = data_table;
+                relative_loc = 0; 
             end
         end
             if save_plot == "Yes"
@@ -3851,7 +3853,7 @@ classdef functionsContainer
             
             % taking a snap at every respective angle 
             file_name = sprintf('FSS %d',angle(rot_count)); 
-            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_ID,file_name)            
+            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_ID,file_name);            
             end
 
         end
