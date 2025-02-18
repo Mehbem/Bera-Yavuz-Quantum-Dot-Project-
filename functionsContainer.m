@@ -3831,6 +3831,59 @@ classdef functionsContainer
             end
         end
         
+        function Find_High_Photon_fast_algorithm(obj,check_x_move_step,check_y_move_step,Photon_count_init,ANC300,Frequency)
+            
+            % Get the original photon count
+            original_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
+            
+            % Movement commands (forward and backward) - using fprintf with anc400
+            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", check_x_move_step), ...
+                      @() fprintf(ANC300, "stepd 1 %d\n", check_x_move_step)}; % X+ (right), X- (left)
+            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", check_y_move_step), ...
+                      @() fprintf(ANC300, "stepd 2 %d\n", check_y_move_step)}; % Y+ (up), Y- (down)
+            
+            % Directions: {Move forward, Move backward}
+            directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}};
+            reverse_directions = {move_x{2}, move_x{1}, move_y{2}, move_y{1}}; % Reverse each direction
+            step_types = [check_x_move_step check_y_move_step]; 
+            
+            % main while loop that iterates each 4 direction movement
+            while no_movement ~= 4
+            
+            % counter to see how many times a movement didn't happen for each direct
+            no_movement = 0; 
+            
+                % for loop used for going in each direction  
+                for check = 1:4
+                
+                    while true
+                        % Move in the specified direction
+                        directions{check}();
+                        if check == 1 || check == 2
+                            step_num = step_types(1);
+                        else
+                            step_num = step_types(2);
+                        end
+                        StepQueue(obj,step_num,Frequency)
+                
+                        
+                        % Get the new photon count
+                        new_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
+                        
+                        % If photon count increases, update original count and continue moving
+                        if new_count > original_count
+                            original_count = new_count; 
+                        else
+                            % Move back to the previous position and break out of loop
+                            reverse_directions{check}();
+                            no_movement = no_movement+1; 
+                            break;
+                        end
+                    end
+                end
+            end
+        end
+
         function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting)
 
             % defining angle of rotation 
