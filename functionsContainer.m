@@ -3643,178 +3643,176 @@ classdef functionsContainer
             spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
             
             spectrum_sum = spectrum_sum - bckgrnd_avg ;
-    
-
-        
-        end
+  end
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         function Find_Highest_Photon_Count(obj,X_Step_num_big,Y_Step_num_big,X_Step_num_small,Y_Step_num_small,Photon_count_init,save_plot,QD,ANC300,Frequency,vid_UI,src_UI)
         
-        % Defining different movement options 
-        loop_interval_X = X_Step_num_big/X_Step_num_small;
-        loop_interval_Y = Y_Step_num_big/Y_Step_num_small; 
+            % Defining different movement options 
+            loop_interval_X = X_Step_num_big/X_Step_num_small;
+            loop_interval_Y = Y_Step_num_big/Y_Step_num_small; 
 
-        % Defining smallest stepping Movemment
-        Y_movement_seria_comd_forward = sprintf("stepu 2 %d",Y_Step_num_small);
-        X_movement_seria_comd_forward = sprintf("stepu 1 %d",X_Step_num_small);
-        X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step_num_small);
-        
-        
-        % Defining an empty 0 0 matrix for tracking location 
-        relative_loc = [0 0];
-        max_photon_count = 0; 
-        percentage_complete = 0; 
-        total_amount = loop_interval_Y*4*loop_interval_X+loop_interval_Y*2; 
-        break_all = false; 
-        
-        
-        
-        % get initial photon count 
-        init_photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
-        
-         
-        % initial data table 
-        data_table = table(relative_loc,init_photon_count,'VariableNames', {'Positions', 'PeakCounts'}); 
-        
-        
-        for num_scans = 1:2 
-            %Defining starting position Movement
-            Y_move_forward = sprintf("stepd 2 %d",Y_Step_num_small);
-            for i = 1:loop_interval_Y
-                fprintf(ANC300,Y_move_forward);
-                StepQueue(obj,Y_Step_num_small,Frequency)
-                pause(0.1)
-            end
+            % Defining smallest stepping Movemment
+            Y_movement_seria_comd_forward = sprintf("stepu 2 %d",Y_Step_num_small);
+            X_movement_seria_comd_forward = sprintf("stepu 1 %d",X_Step_num_small);
+            X_movement_seria_comd_back = sprintf("stepd 1 %d",X_Step_num_small);
             
-            X_move_forward = sprintf("stepd 1 %d",X_Step_num_small);
-            for i = 1:loop_interval_X
-                fprintf(ANC300,X_move_forward);
-                StepQueue(obj,X_Step_num_small,Frequency);
-                pause(0.1)
-            end
-        
-            for y_move = 1:loop_interval_Y*2
-                if y_move ~= 1
-                    relative_loc = relative_loc + [0 1]; 
-                    fprintf(ANC300, Y_movement_seria_comd_forward);
-                    StepQueue(obj,X_Step_num_small, Frequency);
+            
+            % Defining an empty 0 0 matrix for tracking location 
+            relative_loc = [0 0];
+            max_photon_count = 0; 
+            percentage_complete = 0; 
+            total_amount = loop_interval_Y*4*loop_interval_X+loop_interval_Y*2; 
+            break_all = false; 
+            
+            
+            
+            % get initial photon count 
+            init_photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
+            
+            
+            % initial data table 
+            data_table = table(relative_loc,init_photon_count,'VariableNames', {'Positions', 'PeakCounts'}); 
+            
+            
+            for num_scans = 1:2 
+                %Defining starting position Movement
+                Y_move_forward = sprintf("stepd 2 %d",Y_Step_num_small);
+                for i = 1:loop_interval_Y
+                    fprintf(ANC300,Y_move_forward);
+                    StepQueue(obj,Y_Step_num_small,Frequency)
                     pause(0.1)
-            
-                    % Read photon count
-                    photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
-            
-                    % Update table
-                    new_row = {relative_loc, photon_count};
-                    data_table = [data_table; new_row]; 
-                    percentage_complete = percentage_complete + 1;
-            
-                    % Update Message
-                    fprintf("Completed %d/%d",percentage_complete,total_amount)
-                    if photon_count > 0.85*max_photon_count & max_photon_count ~= 0 
-                        break_all = true; 
-                        break
-                    end
+                end
+                
+                X_move_forward = sprintf("stepd 1 %d",X_Step_num_small);
+                for i = 1:loop_interval_X
+                    fprintf(ANC300,X_move_forward);
+                    StepQueue(obj,X_Step_num_small,Frequency);
+                    pause(0.1)
                 end
             
-                for x_move = 1:loop_interval_X*2
-                    if mod(y_move, 2) == 0
-                        relative_loc = relative_loc + [-1 0];
-            
-                        fprintf(ANC300, X_movement_seria_comd_back);
+                for y_move = 1:loop_interval_Y*2
+                    if y_move ~= 1
+                        relative_loc = relative_loc + [0 1]; 
+                        fprintf(ANC300, Y_movement_seria_comd_forward);
                         StepQueue(obj,X_Step_num_small, Frequency);
                         pause(0.1)
-                    else
-                        relative_loc = relative_loc + [+1 0];
-            
-                        fprintf(ANC300, X_movement_seria_comd_forward);
-                        StepQueue(obj,X_Step_num_small, Frequency);
-                        pause(0.1)
+                
+                        % Read photon count
+                        photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
+                
+                        % Update table
+                        new_row = {relative_loc, photon_count};
+                        data_table = [data_table; new_row]; 
+                        percentage_complete = percentage_complete + 1;
+                
+                        % Update Message
+                        fprintf("Completed %d/%d",percentage_complete,total_amount)
+                        if photon_count > 0.85*max_photon_count & max_photon_count ~= 0 
+                            break_all = true; 
+                            break
+                        end
                     end
-            
-                    % Read photon count
-                    photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
-            
-                    % Update table
-                    new_row = {relative_loc, photon_count};
-                    data_table = [data_table; new_row]; 
-                    percentage_complete = percentage_complete + 1; 
-            
-                     % Update Message
-                    fprintf("Completed %d/%d",percentage_complete,total_amount)
-                    if photon_count > 0.95*max_photon_count & max_photon_count ~= 0 
-                        break_all = true; 
+                
+                    for x_move = 1:loop_interval_X*2
+                        if mod(y_move, 2) == 0
+                            relative_loc = relative_loc + [-1 0];
+                
+                            fprintf(ANC300, X_movement_seria_comd_back);
+                            StepQueue(obj,X_Step_num_small, Frequency);
+                            pause(0.1)
+                        else
+                            relative_loc = relative_loc + [+1 0];
+                
+                            fprintf(ANC300, X_movement_seria_comd_forward);
+                            StepQueue(obj,X_Step_num_small, Frequency);
+                            pause(0.1)
+                        end
+                
+                        % Read photon count
+                        photon_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
+                
+                        % Update table
+                        new_row = {relative_loc, photon_count};
+                        data_table = [data_table; new_row]; 
+                        percentage_complete = percentage_complete + 1; 
+                
+                        % Update Message
+                        fprintf("Completed %d/%d",percentage_complete,total_amount)
+                        if photon_count > 0.95*max_photon_count & max_photon_count ~= 0 
+                            break_all = true; 
+                            break
+                        end
+                    end
+                    if break_all == true
                         break
                     end
                 end
                 if break_all == true
                     break
                 end
+                % find maximum photon count from first scan 
+                max_photon_count = max(data_table.PeakCounts); 
+                
+                if num_scans < 2
+                    QD_counter = [1 1];
+                    Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
+                    pause(0.2)
+                    % assigning original data to a new variable to return later
+                    % if needed
+                    original_data_table = data_table;
+                    relative_loc = 0; 
+                end
             end
-            if break_all == true
-                break
-            end
-            % find maximum photon count from first scan 
-            max_photon_count = max(data_table.PeakCounts); 
-             
-            if num_scans < 2
-                QD_counter = [1 1];
-                Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
-                pause(0.2)
-                % assigning original data to a new variable to return later
-                % if needed
-                original_data_table = data_table;
-                relative_loc = 0; 
-            end
-        end
-            if save_plot == "Yes"
-            % Extract data from table
-            X_Coords = original_data_table{:,'Positions'}(:,1);
-            Y_Coords = original_data_table{:,'Positions'}(:,2);
-            Photon_count_vals = original_data_table{:,'PeakCounts'};
-            
-            
-            % Extract unique X and Y values (assuming evenly spaced grid)
-            xVals = unique(X_Coords);
-            yVals = unique(Y_Coords); 
-            
-            % Determine grid size
-            numCols = length(xVals);
-            numRows = length(yVals);
-            
-            % Create an empty grid for intensity values
-            Z = nan(numRows, numCols);
-            
-            % Fill the grid with intensity values based on coordinates
-            for i = 1:size(X_Coords,1)
-                xIdx = find(xVals == X_Coords(i));
-                yIdx = find(yVals == Y_Coords(i));
-                Z(yIdx, xIdx) = Photon_count_vals(i);
-            end
-            
-            % Flip the Y-axis so (0,0) is at the top-left
-            Z = flipud(Z);
-            
-            % Plot the data using imagesc
-            figure;
-            imagesc(xVals, yVals, Z);
-            colormap(jet); % Change colormap if needed
-            colorbar;
-            axis equal tight;
-            ax = gca;
-            ax.YTickLabel = flip(ax.YTickLabel); % Reverse Y-axis labels
-            ax.XAxisLocation = 'top'; % Moves X-axis labels to the top  
-            set(gca, 'YDir', 'Normal'); % Ensure top-left origin
-            xlabel('X');
-            ylabel('Y');
-            
-            title('Raster Scan Photon Count');
-            file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD); 
-            saveas(gca,file_name)
-            end
+                if save_plot == "Yes"
+                % Extract data from table
+                X_Coords = original_data_table{:,'Positions'}(:,1);
+                Y_Coords = original_data_table{:,'Positions'}(:,2);
+                Photon_count_vals = original_data_table{:,'PeakCounts'};
+                
+                
+                % Extract unique X and Y values (assuming evenly spaced grid)
+                xVals = unique(X_Coords);
+                yVals = unique(Y_Coords); 
+                
+                % Determine grid size
+                numCols = length(xVals);
+                numRows = length(yVals);
+                
+                % Create an empty grid for intensity values
+                Z = nan(numRows, numCols);
+                
+                % Fill the grid with intensity values based on coordinates
+                for i = 1:size(X_Coords,1)
+                    xIdx = find(xVals == X_Coords(i));
+                    yIdx = find(yVals == Y_Coords(i));
+                    Z(yIdx, xIdx) = Photon_count_vals(i);
+                end
+                
+                % Flip the Y-axis so (0,0) is at the top-left
+                Z = flipud(Z);
+                
+                % Plot the data using imagesc
+                figure;
+                imagesc(xVals, yVals, Z);
+                colormap(jet); % Change colormap if needed
+                colorbar;
+                axis equal tight;
+                ax = gca;
+                ax.YTickLabel = flip(ax.YTickLabel); % Reverse Y-axis labels
+                ax.XAxisLocation = 'top'; % Moves X-axis labels to the top  
+                set(gca, 'YDir', 'Normal'); % Ensure top-left origin
+                xlabel('X');
+                ylabel('Y');
+                
+                title('Raster Scan Photon Count');
+                file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD); 
+                saveas(gca,file_name)
+                end
         end
         
+
         function Find_High_Photon_fast_algorithm(obj,check_x_move_step,check_y_move_step,Photon_count_init,ANC300,Frequency)
             
             % Get the original photon count
@@ -3867,6 +3865,7 @@ classdef functionsContainer
                 end
             end
         end
+
 
         function Find_Highest_Photon_Spot_UpHill(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
             % Hill-climbing algorithm 
@@ -3935,6 +3934,7 @@ classdef functionsContainer
             end
         end
 
+
         function Find_Highest_Photon_Spot_Stoichastic(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
             % Get the initial photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
@@ -3997,6 +3997,7 @@ classdef functionsContainer
             end
         end
 
+
         function Find_Highest_Photon_RSRA(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency, max_attempts)
             % Get the initial photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
@@ -4045,6 +4046,7 @@ classdef functionsContainer
             end
         end
 
+
         function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting)
 
             % defining angle of rotation 
@@ -4071,7 +4073,8 @@ classdef functionsContainer
             end
 
         end
-        
+      
+
         function FSS_Folder_Creation(obj,QD)
             % Fetching today's date
             date = Fetch_Date(obj); % fetching today's date
@@ -4104,6 +4107,7 @@ classdef functionsContainer
             Specific_QD_FSS = folder_name;
             disp("Created folder: " + Specific_QD_FSS);
         end
+        
         
         function latestFolder = find_latestFolder(obj,QD)
             % Fetching today's date
