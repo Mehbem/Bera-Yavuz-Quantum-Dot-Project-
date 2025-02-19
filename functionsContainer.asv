@@ -4013,7 +4013,7 @@ classdef functionsContainer
             end
         end
 
-        function Find_Highest_Photon_RSRA(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency, max_attempts)
+        function Find_Highest_Photon_Random(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency, max_attempts)
             % Get the initial photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
             
@@ -4061,6 +4061,7 @@ classdef functionsContainer
             end
         end
 
+        
         function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting)
 
             % defining angle of rotation 
