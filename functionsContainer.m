@@ -3365,6 +3365,7 @@ classdef functionsContainer
         %
         % Outputs:
         %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
+            data = load("Spectrometer_Settings.mat");
 
             date = Fetch_Date(obj); % fetching today's date
             date_test =  date + "_Test"; 
@@ -3398,8 +3399,8 @@ classdef functionsContainer
                     if Spectrometer_Gratting == 1800
 
                         % Define Wavelength Range
-                        wvlngth_start = 889.191;
-                        wvlngth_end = 895.011;
+                        wvlngth_start = data.max_wvlen_1800mm;
+                        wvlngth_end = data.min_wvlen_1800mm; 
                     elseif Spectrometer_Gratting == 1200
 
                     elseif Spectrometer_Gratting == 150
@@ -3409,25 +3410,11 @@ classdef functionsContainer
 
                     
                     % snapping a photo and gray scaling it 
-                    Emission_Reading_Img = getsnapshot(vid_ASI);
+                    Emission_Reading_Img = mean(getdata(vid_ASI, 3), 4);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
 
-                    % Evaluating the boolean to see if user wants to save raw image
-                    if SaveImg == "Yes"
-                        specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
-                        RawImg_Fullpathway = fullfile(pathway_main,specific_filename_img);
-                        imwrite(Emission_Reading_Img,RawImg_Fullpathway)
-                    end
-                    
-                    %Highest-pixel based threshold:
-                    auto_thresh = max(Emission_Reading_Img,[],"all")*0.3; 
-                    
-                    % Apply threshold
-                    filtered_img = Emission_Reading_Img;
-                    filtered_img(Emission_Reading_Img <= auto_thresh) = 0;
-                    %imshow(filtered_img)
 
                     % Read Background Images in grayscale
                     for i = 1:num_background_images
@@ -3448,16 +3435,10 @@ classdef functionsContainer
                     bckgrnd_img_2 = background_images{2};
                     bckgrnd_img_3 = background_images{3};
 
-
-                   
-                    % Find central row with maximum intensity
-                    %intensity_per_row = sum(filtered_img, 2);
-                    %[~, central_row] = max(intensity_per_row);
-                    
                     % Auto-size vertical window
                     [height,width] = size(img); 
                     central_row = height/2; 
-                    window_size = round(height*0.3); % 30% below and above the central_row 
+                    window_size = round(height*0.4); % 40% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
@@ -3492,6 +3473,19 @@ classdef functionsContainer
                         Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Angle);
                         qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
+
+                   % Evaluating the boolean to see if user wants to save raw image
+                    if SaveImg == "Yes"
+                        if contains(FSS,"FSS")
+                            mkdir(fullfile(latestFolder,"Raw_Imgs"))
+                            RawImg_Fullpathway = fullfile(latestFolder,"Raw_Imgs",strcat(Quantum_Dot_Named_File,".png"));
+                        else
+                            specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
+                            RawImg_Fullpathway = fullfile(pathway_main,specific_filename_img);
+                        end
+                        imwrite(Emission_Reading_Img,RawImg_Fullpathway)
+                    end
+                    
                     
                     % Create a new figure
                     figure;
@@ -3639,26 +3633,16 @@ classdef functionsContainer
                 Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
             end
 
-            %Highest-pixel based threshold:
-            auto_thresh = max(Emission_Reading_Img,[],"all")*0.3; 
-            
-            % Apply threshold
-            filtered_img = Emission_Reading_Img;
-            filtered_img(Emission_Reading_Img <= auto_thresh) = 0;
-
-             % Find central row with maximum intensity
-            intensity_per_row = sum(filtered_img, 2);
-            [~, central_row] = max(intensity_per_row);
-
             % Auto-size vertical window
-            window_size = round(height*0.15); % 15% below and above the central_row 
+            [height,width] = size(Emission_Reading_Img); 
+            central_row = height/2; 
+            window_size = round(height*0.4); % 40% below and above the central_row 
             valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
             % Sum spectrum with automated window
             spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
             
             spectrum_sum = spectrum_sum - bckgrnd_avg ;
-            spectrum_sum = spectrum_sum/2;
     
 
         
@@ -3880,6 +3864,183 @@ classdef functionsContainer
                             break;
                         end
                     end
+                end
+            end
+        end
+
+        function Find_Highest_Photon_Spot_UpHill(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
+            % Hill-climbing algorithm 
+            
+            % Get the original photon count
+            best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+            
+            % Define movement functions for X and Y directions
+            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_size_x), ...
+                      @() fprintf(ANC300, "stepd 1 %d\n", step_size_x)}; % Right, Left
+            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_size_y), ...
+                      @() fprintf(ANC300, "stepd 2 %d\n", step_size_y)}; % Up, Down
+            reverse_x = {move_x{2}, move_x{1}}; % Reverse for X
+            reverse_y = {move_y{2}, move_y{1}}; % Reverse for Y
+            
+            % Direction order: [X+, X-, Y+, Y-]
+            directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}};
+            reverse_directions = {reverse_x{1}, reverse_x{2}, reverse_y{1}, reverse_y{2}};
+        
+            % Position tracking
+            visited_positions = []; % Store past positions and their photon counts
+            step_types = [step_size_x, step_size_y]; % Step sizes
+        
+            while true
+                best_direction = -1; % Index of the best direction
+                max_count = best_count; % Best photon count found
+                
+                % Try moving in all 4 directions
+                for check = 1:4
+                    % Move in the specified direction
+                    directions{check}();
+                    if check <= 2
+                        step_num = step_types(1); % X-movement
+                    else
+                        step_num = step_types(2); % Y-movement
+                    end
+                    StepQueue(obj, step_num, Frequency);
+        
+                    % Get the new photon count
+                    new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+                    
+                    % Check if it's the highest count so far
+                    if new_count > max_count
+                        max_count = new_count;
+                        best_direction = check;
+                    end
+                    
+                    % Store position data
+                    visited_positions = [visited_positions; check, new_count]; 
+                    
+                    % Move back to the original position
+                    reverse_directions{check}();
+                end
+                
+                % Stop if no improvement is found
+                if best_direction == -1
+                    break;
+                end
+                
+                % Move to the new best position
+                directions{best_direction}();
+                StepQueue(obj, step_types(mod(best_direction,2)+1), Frequency);
+                
+                % Update the best count
+                best_count = max_count;
+            end
+        end
+
+        function Find_Highest_Photon_Spot_Stoichastic(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
+            % Get the initial photon count
+            best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+            
+            % Define step sizes
+            step_sizes = [step_size_x, step_size_y];
+            
+            % Search directions (X+, X-, Y+, Y-)
+            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_sizes(1)), ...
+                      @() fprintf(ANC300, "stepd 1 %d\n", step_sizes(1))}; % Right, Left
+            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_sizes(2)), ...
+                      @() fprintf(ANC300, "stepd 2 %d\n", step_sizes(2))}; % Up, Down
+            directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}};
+            
+            % Grid search initialization
+            num_samples = 8; % Number of random movements before refining
+            best_position = [0, 0]; % Tracking relative movements
+            
+            % **Step 1: Broad Random Sampling**
+            for i = 1:num_samples
+                dir_idx = randi(4); % Pick a random direction
+                directions{dir_idx}();
+                StepQueue(obj, step_sizes(mod(dir_idx,2)+1), Frequency);
+                
+                % Get photon count
+                new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+                
+                % If the photon count improves, update the best position
+                if new_count > best_count
+                    best_count = new_count;
+                    best_position = [dir_idx, new_count]; % Store best direction & count
+                end
+            end
+            
+            % **Step 2: Move to Best Found Position**
+            if best_position(1) ~= 0
+                directions{best_position(1)}(); 
+                StepQueue(obj, step_sizes(mod(best_position(1),2)+1), Frequency);
+            end
+            
+            % **Step 3: Refine with Smaller Steps**
+            step_sizes = step_sizes / 2; % Reduce step size for precision
+            improvement = true;
+            
+            while improvement
+                improvement = false;
+                for check = 1:4
+                    directions{check}();
+                    StepQueue(obj, step_sizes(mod(check,2)+1), Frequency);
+                    
+                    new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+                    
+                    if new_count > best_count
+                        best_count = new_count;
+                        improvement = true;
+                    else
+                        % No improvement, ignore bad movement
+                    end
+                end
+            end
+        end
+
+        function Find_Highest_Photon_RSRA(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency, max_attempts)
+            % Get the initial photon count
+            best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+            
+            % Define movement functions
+            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_size_x), ...
+                      @() fprintf(ANC300, "stepd 1 %d\n", step_size_x)}; % Right, Left
+            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_size_y), ...
+                      @() fprintf(ANC300, "stepd 2 %d\n", step_size_y)}; % Up, Down
+            directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}}; % List of movements
+        
+            % Search parameters
+            best_position = [0, 0]; % Assume initial position as reference
+            step_reduction_factor = 0.7; % Reduce step size in later iterations
+            attempts = 0;
+            
+            while attempts < max_attempts
+                % Randomly shuffle movement order
+                move_order = randperm(4);  
+                found_better = false;
+                
+                for i = 1:4
+                    dir_idx = move_order(i);
+                    directions{dir_idx}();
+                    StepQueue(obj, step_size_x, Frequency); % Queue step to sync piezo
+                    
+                    % Get new photon count
+                    new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
+                    
+                    % Check if this is the best count found
+                    if new_count > best_count
+                        best_count = new_count;
+                        best_position = [dir_idx, new_count]; % Store best position info
+                        found_better = true;
+                    end
+                end
+                
+                % Reduce step size if we are improving
+                if found_better
+                    step_size_x = round(step_size_x * step_reduction_factor);
+                    step_size_y = round(step_size_y * step_reduction_factor);
+                else
+                    % If no better spot is found, stop searching
+                    break;
                 end
             end
         end
