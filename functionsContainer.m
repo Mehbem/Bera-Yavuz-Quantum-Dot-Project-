@@ -3643,7 +3643,7 @@ classdef functionsContainer
             spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
             
             spectrum_sum = spectrum_sum - bckgrnd_avg ;
-  end
+        end
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -3812,17 +3812,18 @@ classdef functionsContainer
                 end
         end
         
-
         function Find_High_Photon_fast_algorithm(obj,check_x_move_step,check_y_move_step,Photon_count_init,ANC300,Frequency)
             
             % Get the original photon count
             original_count = py.ID900_Func.query_photon_counter(Photon_count_init); 
             
             % Movement commands (forward and backward) - using fprintf with anc400
-            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", check_x_move_step), ...
-                      @() fprintf(ANC300, "stepd 1 %d\n", check_x_move_step)}; % X+ (right), X- (left)
-            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", check_y_move_step), ...
-                      @() fprintf(ANC300, "stepd 2 %d\n", check_y_move_step)}; % Y+ (up), Y- (down)
+            move_fwd_x = sprintf("stepu 1 %d", check_x_move_step);move_back_x = sprintf("stepd 1 %d", check_x_move_step); 
+            move_fwd_y = sprintf("stepu 2 %d", check_y_move_step);move_back_y = sprintf("stepd 2 %d", check_y_move_step); 
+            move_x = {@() fprintf(ANC300, move_fwd_x), ...
+                      @() fprintf(ANC300, move_back_x)}; % X+ (right), X- (left)
+            move_y = {@() fprintf(ANC300, move_fwd_y), ...
+                      @() fprintf(ANC300, move_back_y)}; % Y+ (up), Y- (down)
             
             % Directions: {Move forward, Move backward}
             directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}};
@@ -3846,7 +3847,7 @@ classdef functionsContainer
                         else
                             step_num = step_types(2);
                         end
-                        StepQueue(obj,step_num,Frequency)
+                        StepQue      ue(obj,step_num,Frequency)
                 
                         
                         % Get the new photon count
@@ -3866,18 +3867,20 @@ classdef functionsContainer
             end
         end
 
-
         function Find_Highest_Photon_Spot_UpHill(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
             % Hill-climbing algorithm 
             
             % Get the original photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
             
-            % Define movement functions for X and Y directions
-            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_size_x), ...
-                      @() fprintf(ANC300, "stepd 1 %d\n", step_size_x)}; % Right, Left
-            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_size_y), ...
-                      @() fprintf(ANC300, "stepd 2 %d\n", step_size_y)}; % Up, Down
+            % Movement commands (forward and backward) - using fprintf with anc400
+            move_fwd_x = sprintf("stepu 1 %d", step_size_x);move_back_x = sprintf("stepd 1 %d", step_size_x); 
+            move_fwd_y = sprintf("stepu 2 %d", step_size_y);move_back_y = sprintf("stepd 2 %d", step_size_y); 
+            move_x = {@() fprintf(ANC300, move_fwd_x), ...
+                      @() fprintf(ANC300, move_back_x)}; % X+ (right), X- (left)
+            move_y = {@() fprintf(ANC300, move_fwd_y), ...
+                      @() fprintf(ANC300, move_back_y)}; % Y+ (up), Y- (down)
+
             reverse_x = {move_x{2}, move_x{1}}; % Reverse for X
             reverse_y = {move_y{2}, move_y{1}}; % Reverse for Y
             
@@ -3934,7 +3937,6 @@ classdef functionsContainer
             end
         end
 
-
         function Find_Highest_Photon_Spot_Stoichastic(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency)
             % Get the initial photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
@@ -3943,10 +3945,12 @@ classdef functionsContainer
             step_sizes = [step_size_x, step_size_y];
             
             % Search directions (X+, X-, Y+, Y-)
-            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_sizes(1)), ...
-                      @() fprintf(ANC300, "stepd 1 %d\n", step_sizes(1))}; % Right, Left
-            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_sizes(2)), ...
-                      @() fprintf(ANC300, "stepd 2 %d\n", step_sizes(2))}; % Up, Down
+            move_fwd_x = sprintf("stepu 1 %d", step_size_x);move_back_x = sprintf("stepd 1 %d", step_size_x); 
+            move_fwd_y = sprintf("stepu 2 %d", step_size_y);move_back_y = sprintf("stepd 2 %d", step_size_y); 
+            move_x = {@() fprintf(ANC300, move_fwd_x), ...
+                      @() fprintf(ANC300, move_back_x)}; % X+ (right), X- (left)
+            move_y = {@() fprintf(ANC300, move_fwd_y), ...
+                      @() fprintf(ANC300, move_back_y)}; % Y+ (up), Y- (down)
             directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}};
             
             % Grid search initialization
@@ -3957,7 +3961,7 @@ classdef functionsContainer
             for i = 1:num_samples
                 dir_idx = randi(4); % Pick a random direction
                 directions{dir_idx}();
-                StepQueue(obj, step_sizes(mod(dir_idx,2)+1), Frequency);
+                StepQueue(obj,step_size_x, Frequency);
                 
                 % Get photon count
                 new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
@@ -3972,7 +3976,7 @@ classdef functionsContainer
             % **Step 2: Move to Best Found Position**
             if best_position(1) ~= 0
                 directions{best_position(1)}(); 
-                StepQueue(obj, step_sizes(mod(best_position(1),2)+1), Frequency);
+                StepQueue(obj,step_size_x, Frequency);
             end
             
             % **Step 3: Refine with Smaller Steps**
@@ -3997,16 +4001,17 @@ classdef functionsContainer
             end
         end
 
-
         function Find_Highest_Photon_RSRA(obj, step_size_x, step_size_y, Photon_count_init, ANC300, Frequency, max_attempts)
             % Get the initial photon count
             best_count = py.ID900_Func.query_photon_counter(Photon_count_init);
             
             % Define movement functions
-            move_x = {@() fprintf(ANC300, "stepu 1 %d\n", step_size_x), ...
-                      @() fprintf(ANC300, "stepd 1 %d\n", step_size_x)}; % Right, Left
-            move_y = {@() fprintf(ANC300, "stepu 2 %d\n", step_size_y), ...
-                      @() fprintf(ANC300, "stepd 2 %d\n", step_size_y)}; % Up, Down
+            move_fwd_x = sprintf("stepu 1 %d", step_size_x);move_back_x = sprintf("stepd 1 %d", step_size_x); 
+            move_fwd_y = sprintf("stepu 2 %d", step_size_y);move_back_y = sprintf("stepd 2 %d", step_size_y); 
+            move_x = {@() fprintf(ANC300, move_fwd_x), ...
+                      @() fprintf(ANC300, move_back_x)}; % X+ (right), X- (left)
+            move_y = {@() fprintf(ANC300, move_fwd_y), ...
+                      @() fprintf(ANC300, move_back_y)}; % Y+ (up), Y- (down)
             directions = {move_x{1}, move_x{2}, move_y{1}, move_y{2}}; % List of movements
         
             % Search parameters
@@ -4022,7 +4027,7 @@ classdef functionsContainer
                 for i = 1:4
                     dir_idx = move_order(i);
                     directions{dir_idx}();
-                    StepQueue(obj, step_size_x, Frequency); % Queue step to sync piezo
+                    StepQueue(obj,step_size_x, Frequency); % Queue step to sync piezo
                     
                     % Get new photon count
                     new_count = py.ID900_Func.query_photon_counter(Photon_count_init);
@@ -4045,7 +4050,6 @@ classdef functionsContainer
                 end
             end
         end
-
 
         function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting)
 
@@ -4074,7 +4078,6 @@ classdef functionsContainer
 
         end
       
-
         function FSS_Folder_Creation(obj,QD)
             % Fetching today's date
             date = Fetch_Date(obj); % fetching today's date
@@ -4107,7 +4110,6 @@ classdef functionsContainer
             Specific_QD_FSS = folder_name;
             disp("Created folder: " + Specific_QD_FSS);
         end
-        
         
         function latestFolder = find_latestFolder(obj,QD)
             % Fetching today's date

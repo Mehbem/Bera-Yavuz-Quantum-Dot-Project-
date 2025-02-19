@@ -4,7 +4,7 @@
 MyFuncs = functionsContainer;
 MyFuncs.AddPathFunc("LAB"); 
 % Establishing serialconnetion with ANC300 device
-ANC300 = serialport("COM7",9600); % Change X to the COM port connected
+%ANC300 = serialport("COM7",9600); % Change X to the COM port connected
 % 
 % fprintf(ANC300,"setm 3 gnd"); 
 % fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20"); fprintf(ANC300,"setm 1 stp"); 
