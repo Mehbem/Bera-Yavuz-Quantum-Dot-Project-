@@ -9,14 +9,14 @@ MyFuncs.AddPathFunc("LAB");
 % Initilizing the necessary devices
 % --------------------------------------------------------------------------------------------------------
 %ANC300 = serialport("COM7",9600); % Establishing serialconnetion with ANC300 device
-%ell_motor = serialport("COM10",9600); % Establishing a serialconnection with the HWP motor
+ell_motor = serialport("COM10",9600); % Establishing a serialconnection with the HWP motor
 
 
             
 
 % defining parameters and initilizing everything 
 angle = 0:5:360;
-QD_counter = [1 1];
+QD_counter = [38 1];
 Spectrometer_Gratting = 1800; 
 
 
@@ -41,7 +41,7 @@ pause(1)
 % taking a snap at every respective angle 
 file_name = sprintf('FSS %d',angle(rot_count)); 
 file_name_sting = string(file_name);
-MyFuncs.ASI_Snap_Img(vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_counter,file_name_sting);
+MyFuncs.ASI_Snap_Img(vid_ASI,src_ASI,"Spectrometer","Yes",Spectrometer_Gratting,QD_counter,file_name_sting);
 end
 
 

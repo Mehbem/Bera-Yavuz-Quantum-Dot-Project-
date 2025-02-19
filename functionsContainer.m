@@ -2356,7 +2356,7 @@ classdef functionsContainer
 
             Error_Margin_Factor = 0.3; % in terms of seconds so change as appropriately 
             time_to_pause = (Step_num/frequency) + Error_Margin_Factor; % calculating the time needed for pausing between lines 
-            pause(time_to_pause) 
+            pause(time_to_pause); 
         end
 
         function [direction] = ClosestPtDirection(obj,ShortestDistance)

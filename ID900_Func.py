@@ -72,7 +72,7 @@ def query_photon_counter(tc):
 
     print("STARTING COLLECTION")
 
-    n_repeats = 3; 
+    n_repeats = 5; 
 
     for i in range(n_repeats):
 
@@ -81,7 +81,7 @@ def query_photon_counter(tc):
         #print(countersValue)
         
     
-    countersValue = countersValue/3
+    countersValue = countersValue/n_repeats
 
     return countersValue
 
