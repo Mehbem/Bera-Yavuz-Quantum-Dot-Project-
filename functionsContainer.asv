@@ -3374,25 +3374,30 @@ classdef functionsContainer
             pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
             filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
 
-            % Define background image names and storage path
-            num_background_images = 3;
-            background_images = cell(1, num_background_images); % Preallocate cell array
 
 
 
             switch ImgType
                 case "Background"
-                    start(vid_ASI)
+                    
+                    % Define background image names and storage path
+                    num_background_images = 3;
+
                     % Capture and save background images
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
                         full_pathway = fullfile(pathway_main, filename_background_saved);
-                        background_img = getdata(vid_ASI,1); % Capture frame
-                        imwrite(background_img, full_pathway); % Save image
+                        background_img(:,:,:,i) = getsnapshot(vid_ASI); 
+                        imwrite(background_img(:,:,:,i), full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
-                        pause(1)
+                        pause(0.5)
                     end
-                    stop(vid_ASI)
+
+                    % get average of background and store it 
+                    background_img = mean(background_img, 4); 
+                    save("Spectrometer_Settings.mat","background_img","-append")
+
+
                 case "Spectrometer"
 
                     %Parameters for different gratings
@@ -3410,7 +3415,7 @@ classdef functionsContainer
 
                     
                     % snapping a photo and gray scaling it 
-                    frames_data = [];
+                    Emission_Reading_Img = [];
                     num_frames_to_use = 3; 
                     for i = 1:num_frames_to_use
                         Emission_Reading_Img(:,:,:,i) = getsnapshot(vid_ASI);  % Collect frames (ensure this is the correct function)
@@ -3448,10 +3453,10 @@ classdef functionsContainer
 
                     
                     % Sum spectrum within window
-                    spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
-                    bckgrnd_sum_1 = sum(double(bckgrnd_img_1(valid_rows, :)), 1);
-                    bckgrnd_sum_2 = sum(double(bckgrnd_img_2(valid_rows, :)), 1);
-                    bckgrnd_sum_3 = sum(double(bckgrnd_img_3(valid_rows, :)), 1);
+                    spectrum_sum = sum(Emission_Reading_Img(valid_rows, :), 1);
+                    bckgrnd_sum_1 = sum(bckgrnd_img_1(valid_rows, :), 1);
+                    bckgrnd_sum_2 = sum(bckgrnd_img_2(valid_rows, :), 1);
+                    bckgrnd_sum_3 = sum(bckgrnd_img_3(valid_rows, :), 1);
                     
                     % averaging out and subtracting background
                     bckgrnd_avg = (bckgrnd_sum_1 + bckgrnd_sum_2 + bckgrnd_sum_3)/3;
@@ -4100,7 +4105,7 @@ classdef functionsContainer
     
         end
 
-        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting)
+        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting,SaveRawImg)
 
             % defining angle of rotation 
             angle = 0:5:360;
@@ -4122,7 +4127,7 @@ classdef functionsContainer
             
             % taking a snap at every respective angle 
             file_name = sprintf('FSS %d',angle(rot_count)); 
-            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer","No",Spectrometer_Gratting,QD_ID,file_name);            
+            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer",SaveRawImg,Spectrometer_Gratting,QD_ID,file_name);            
             end
 
         end

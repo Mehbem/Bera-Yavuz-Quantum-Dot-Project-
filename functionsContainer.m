@@ -3374,25 +3374,30 @@ classdef functionsContainer
             pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
             filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
 
-            % Define background image names and storage path
-            num_background_images = 3;
-            background_images = cell(1, num_background_images); % Preallocate cell array
 
 
 
             switch ImgType
                 case "Background"
-                    start(vid_ASI)
+                    
+                    % Define background image names and storage path
+                    num_background_images = 3;
+
                     % Capture and save background images
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
                         full_pathway = fullfile(pathway_main, filename_background_saved);
-                        background_img = getdata(vid_ASI,1); % Capture frame
-                        imwrite(background_img, full_pathway); % Save image
+                        background_img(:,:,:,i) = getsnapshot(vid_ASI); 
+                        imwrite(background_img(:,:,:,i), full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
                         pause(0.5)
                     end
-                    stop(vid_ASI)
+
+                    % get average of background and store it 
+                    background_img = mean(background_img, 4); 
+                    save("Spectrometer_Settings.mat","background_img","-append")
+
+
                 case "Spectrometer"
 
                     %Parameters for different gratings
@@ -3420,26 +3425,10 @@ classdef functionsContainer
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
 
-
-                    % Read Background Images in grayscale
-                    for i = 1:num_background_images
-                    filename_background_saved = sprintf("%s_%d.png", filename_background, i);
-                    full_pathway = fullfile(pathway_main, filename_background_saved);
-                    img = imread(full_pathway);
+                    % grab background average
+                    background_Img = data.background_img; 
+      
                     
-                        if size(img, 3) == 3 % Convert RGB images to grayscale
-                            img = rgb2gray(img);
-                        end
-                    
-                    background_images{i} = img; % Store in cell array
-                    
-                    end
-                    
-                    % assigning backgrounds to proper variables 
-                    bckgrnd_img_1 = background_images{1};
-                    bckgrnd_img_2 = background_images{2};
-                    bckgrnd_img_3 = background_images{3};
-
                     % Auto-size vertical window
                     [height,width] = size(img); 
                     central_row = height/2; 
@@ -3448,17 +3437,10 @@ classdef functionsContainer
 
                     
                     % Sum spectrum within window
-                    spectrum_sum = sum(double(Emission_Reading_Img(valid_rows, :)), 1);
-                    bckgrnd_sum_1 = sum(double(bckgrnd_img_1(valid_rows, :)), 1);
-                    bckgrnd_sum_2 = sum(double(bckgrnd_img_2(valid_rows, :)), 1);
-                    bckgrnd_sum_3 = sum(double(bckgrnd_img_3(valid_rows, :)), 1);
+                    spectrum_sum = sum(Emission_Reading_Img(valid_rows, :), 1);
+                    background_Img = sum(background_Img(valid_rows, :), 1);
                     
-                    % averaging out and subtracting background
-                    bckgrnd_avg = (bckgrnd_sum_1 + bckgrnd_sum_2 + bckgrnd_sum_3)/3;
-                    % saving background_avg into a mat file to use later 
-                    save("Spectrometer_Settings.mat","bckgrnd_avg","-append"); 
-                    
-                    spectrum_sum = spectrum_sum - bckgrnd_avg ;
+                    spectrum_sum = spectrum_sum - background_Img ;
                     
     
                     % Init wavelength
