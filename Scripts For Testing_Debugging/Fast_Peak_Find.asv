@@ -6,6 +6,7 @@ start_position = [0, 0]; % Start from an arbitrary point away from the center
 positions = start_position; % Initialize positions array
 Photon_count_init = py.ID900_Func.init_ID900();
 
+
 % Simulate the biased random walk
 for step = 1:num_steps
     fprintf("Step %d/%d\n",step,num_steps)
@@ -26,7 +27,7 @@ for step = 1:num_steps
 
     % If intensity decreases, retrace step
     if photon_counts < 0
-        [x_pos_new, y_pos_new] = MyFuncs.new_stochastic_movement(x_pos_new, y_pos_new, -dir_x, -dir_y,ANC300,20);
+        [x_pos_new, y_pos_new] = MyFuncs.new_stochastic_movement(x_pos_new, y_pos_new, -dir_x, -dir_x,ANC300,20);
     end
 
     % If intensity increases or stays the same, accept the new position
