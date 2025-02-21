@@ -3384,16 +3384,22 @@ classdef functionsContainer
                     num_background_images = 3;
 
                     % Capture and save background images
+                    start(vid_ASI)
                     for i = 1:num_background_images
                         filename_background_saved = sprintf("%s_%d.png", filename_background, i);
                         full_pathway = fullfile(pathway_main, filename_background_saved);
                         background_img(:,:,:,i) = getsnapshot(vid_ASI); 
                         imwrite(background_img(:,:,:,i), full_pathway); % Save image
                         fprintf("Saved background image: %s\n", filename_background_saved);
-                        pause(0.5)
                     end
+                    stop(vid_ASI)
+                    
 
                     % get average of background and store it 
+                    background_img = round(mean(background_img, 4));
+                    if size(background_img,3) == 3 % checks if image is rgb
+                        background_img = rgb2gray(background_img);
+                    end
                     background_img = mean(background_img, 4); 
                     save("Spectrometer_Settings.mat","background_img","-append")
 
@@ -3417,6 +3423,7 @@ classdef functionsContainer
                     % snapping a photo and gray scaling it 
                     Emission_Reading_Img = [];
                     num_frames_to_use = 3; 
+                    start(vid_ASI)
                     for i = 1:num_frames_to_use
                         Emission_Reading_Img(:,:,:,i) = getsnapshot(vid_ASI);  % Collect frames (ensure this is the correct function)
                     end
@@ -3424,13 +3431,13 @@ classdef functionsContainer
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
-
+                    stop(vid_ASI)
                     % grab background average
                     background_Img = data.background_img; 
       
                     
                     % Auto-size vertical window
-                    [height,width] = size(img); 
+                    [height,width] = size(Emission_Reading_Img); 
                     central_row = height/2; 
                     window_size = round(height*0.4); % 40% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
@@ -4047,8 +4054,8 @@ classdef functionsContainer
         function [x_pos_new, y_pos_new] = new_stochastic_movement(obj,x_pos, y_pos, dir_x, dir_y, ANC300, Frequency)
             
             % Calculate the random perturbation (random step size)
-            step_size_x = randi([3 6],1); % Random step size between 3 and 6
-            step_size_y = randi([3 6],1); % Random step size between 3 and 6
+            step_size_x = 4; % Random step size between 3 and 6
+            step_size_y = 4; % Random step size between 3 and 6
         
         
             % step direction command 
