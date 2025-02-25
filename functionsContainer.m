@@ -3070,7 +3070,8 @@ classdef functionsContainer
                     directoryPath_AxesImg = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/Axes Images";
                     directoryPath_GoodImg = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/Photos Good For Testing";
                     directoryPath_Funcs = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project";
-                    addpath(directoryPath_AxesImg,directoryPath_GoodImg,directoryPath_Funcs);
+                    direc_imgs = "/Users/bera_yavuz/Desktop/Quantum Dot Project Github/Bera-Yavuz-Quantum-Dot-Project-/Scripts For Testing_Debugging/Testing Images";
+                    addpath(directoryPath_AxesImg,directoryPath_GoodImg,directoryPath_Funcs,direc_imgs);
 
                 case "LAB"
                     directoryPath_Funcs = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
