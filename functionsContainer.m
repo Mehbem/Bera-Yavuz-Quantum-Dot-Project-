@@ -3472,7 +3472,9 @@ classdef functionsContainer
                    % Evaluating the boolean to see if user wants to save raw image
                     if SaveImg == "Yes"
                         if contains(FSS,"FSS")
-                            mkdir(fullfile(latestFolder,"Raw_Imgs"))
+                            if ~exist(fullfile(latestFolder,"Raw_Imgs"),'dir')
+                                mkdir(fullfile(latestFolder,"Raw_Imgs"))
+                            end
                             RawImg_Fullpathway = fullfile(latestFolder,"Raw_Imgs",strcat(Quantum_Dot_Named_File,".png"));
                         else
                             specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
@@ -3556,9 +3558,8 @@ classdef functionsContainer
                     fprintf(file,'Captured time: %s\n', datestr(now,'HH:MM:SS mmm-dd-yyyy'));
                     % Print the data
                     fprintf(file,'-----Data-----\n');
-                    fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Background Column Sum');
+                     fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Count Average');
                     fprintf(file,'%.4f \t %u\n',data_matrix);
-
 
             end
         end
