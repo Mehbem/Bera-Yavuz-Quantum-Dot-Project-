@@ -6,7 +6,7 @@ my_obj = functionsContainer;
 
 % Adding needed pathways depending on Device - for lab purposes always use device name LAB 
 my_obj.AddPathFunc("LAB")
-
+Photon_count_init = py.ID900_Func.init_ID900();
 
 % Filtering Settings
 scaling = 0.5; 
@@ -24,7 +24,7 @@ LEDSpotCentroidX = LEDSpotCentroid(1);
 LEDSpotCentroidY = LEDSpotCentroid(2);
 
 % x y factors for small movement 
-Read_XY_factor = XY_Factor_Identifier(obj,"","Read","LAB");
+Read_XY_factor = my_obj.XY_Factor_Identifier("","Read","LAB");
 x_factor = Read_XY_factor.X_factor; %(Steps/pixels units)
 y_factor = Read_XY_factor.Y_factor; %(Steps/pixels units)
 
@@ -38,9 +38,9 @@ sep_blue = 370; % Seperation distance blue lines
 
 angle = 45; %43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
 % --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+QD_counter = [67 1];
     
-[StartingQD,StartingQD_Rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = app.MyFuncs.Precision_Locking_Matlab(ANC300,QD_counter,vid_UI,src_UI,20);
+[StartingQD,StartingQD_Rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = my_obj.Precision_Locking_Matlab(ANC300,QD_counter,vid_UI,src_UI,20);
 chosen_QD_Coords = StartingQD; 
 
 % Coordinates of upper and lower boundary lines 
@@ -49,7 +49,7 @@ y_top = chosen_QD_Coords(2) - 2.5*radiusQD;
 
 % Coordinates of left and right boundary lines 
 x_left = chosen_QD_Coords(1) - 2.5*radiusQD; 
-x_right = chosen_QD_Coords(1) + 2.5*radiusQD; vert_line = y_top:y_bottom;
+x_right = chosen_QD_Coords(1) + 2.5*radiusQD; 
 
 
 num_points_horz = length(x_left:x_right);
@@ -96,6 +96,10 @@ for columns = 1:grid_size
     raster_order_points(columns*grid_size-(grid_size-1):columns*grid_size,2) = Unique_y_vals(columns);
 end
 
+% defining center point 
+center_pt = [2560/2, 1920/2]; % Image center
+ % Rotate points
+theta = -angle * pi / 180; % Convert angle to radians
 
 % rotating raster scan points 
 raster_order_points_X_rotated = center_pt(1) + (raster_order_points(:,1) - center_pt(1)) * cos(theta) - (raster_order_points(:,2) - center_pt(2)) * sin(theta);
@@ -126,7 +130,7 @@ relative_loc = [0 0];
 data_table = table(relative_loc,init_photon_count,'VariableNames', {'Positions', 'PeakCounts'}); 
 total_amount = length(x_points);
 max_photon_count = 0; 
- 
+percentage_complete = 0;  
 
 for num_scans = 1:2 
         
@@ -162,7 +166,7 @@ for num_scans = 1:2
     if break_all == true
         fprintf("sucessfully found highest count\n")
         break
-    else 
+    elseif break_all ~= true & num_scans == 2
         fprintf("didn't stop on the highest peak\n")
     end
 
@@ -170,7 +174,7 @@ for num_scans = 1:2
     max_photon_count = max(data_table.PeakCounts); 
     
     if num_scans < 2
-        QD_counter = [1 1];
+        QD_counter = [67 1];
         Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,20); % trying to land on the exact dot
         pause(0.2)
         % assigning original data to a new variable to return later
@@ -222,6 +226,6 @@ if save_plot == "Yes"
     ylabel('Y');
     
     title('Raster Scan Photon Count');
-    file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD); 
+    file_name = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\FSS_Photon_Count_Scan\\Photon_Count_Scan__[%d %d]",QD_counter); 
     saveas(gca,file_name)
 end

@@ -3440,7 +3440,7 @@ classdef functionsContainer
                     % Auto-size vertical window
                     [height,width] = size(Emission_Reading_Img); 
                     central_row = height/2; 
-                    window_size = round(height*0.4); % 40% below and above the central_row 
+                    window_size = round(height*0.15); % 40% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
@@ -4091,10 +4091,10 @@ classdef functionsContainer
     
         end
 
-        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting,SaveRawImg)
+        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting,SaveRawImg,total_ange)
 
             % defining angle of rotation 
-            angle = 0:5:360;
+            angle = 0:5:total_ange;
 
             % for loop for rotating motor 
             for rot_count = 1:length(angle)
