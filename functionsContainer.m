@@ -3376,32 +3376,19 @@ classdef functionsContainer
             filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
 
 
-
-
             switch ImgType
                 case "Background"
-                    
-                    % Define background image names and storage path
-                    num_background_images = 3;
-
+      
                     % Capture and save background images
                     start(vid_ASI)
-                    for i = 1:num_background_images
-                        filename_background_saved = sprintf("%s_%d.png", filename_background, i);
-                        full_pathway = fullfile(pathway_main, filename_background_saved);
-                        background_img(:,:,:,i) = getsnapshot(vid_ASI); 
-                        imwrite(background_img(:,:,:,i), full_pathway); % Save image
-                        fprintf("Saved background image: %s\n", filename_background_saved);
-                    end
-                    stop(vid_ASI)
-                    
+                    wait(vid_ASI) % wait for frames to be acquired
+                    background_img = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
 
                     % get average of background and store it 
-                    background_img = round(mean(background_img, 4));
+                    background_img = mean(background_img, 4);
                     if size(background_img,3) == 3 % checks if image is rgb
                         background_img = rgb2gray(background_img);
                     end
-                    background_img = mean(background_img, 4); 
                     save("Spectrometer_Settings.mat","background_img","-append")
 
 
@@ -3419,20 +3406,16 @@ classdef functionsContainer
 
                     end
 
-
                     
-                    % snapping a photo and gray scaling it 
-                    Emission_Reading_Img = [];
-                    num_frames_to_use = 3; 
+                    % Snapping a photo and gray scaling it 
                     start(vid_ASI)
-                    for i = 1:num_frames_to_use
-                        Emission_Reading_Img(:,:,:,i) = getsnapshot(vid_ASI);  % Collect frames (ensure this is the correct function)
-                    end
-                    Emission_Reading_Img = round(mean(Emission_Reading_Img, 4));
+                    wait(vid_ASI) % wait for frames to be acquired
+                    Emission_Reading_Img = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
+
+                    Emission_Reading_Img = mean(Emission_Reading_Img, 4);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
-                    stop(vid_ASI)
                     % grab background average
                     background_Img = data.background_img; 
       
