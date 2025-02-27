@@ -3643,7 +3643,7 @@ classdef functionsContainer
     
         % FSS Related functions
         %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        function stochastic_movement(obj, dir_x, dir_y, ANC300, Frequency)
+        function stochastic_movement(obj,x_pos, y_pos, dir_x, dir_y, ANC300, Frequency)
             
             % Calculate the random perturbation (random step size)
             step_size_x = 4; % Random step size between 3 and 6
@@ -3663,11 +3663,11 @@ classdef functionsContainer
             stochastic_dir_y = sprintf("stepd 2 %d",step_size_y); % Move down in y axis 
             end
         
-            % sending movement command to piezo 
-            fprintf(ANC300,stochastic_dir_x);
+            % sending movement comman
+            fprintf(ANC300,stochastic_dir_x)
             StepQueue(obj,step_size_x,Frequency);
         
-            fprintf(ANC300,stochastic_dir_y);
+            fprintf(ANC300,stochastic_dir_y)
             StepQueue(obj,step_size_y,Frequency);
             
     
