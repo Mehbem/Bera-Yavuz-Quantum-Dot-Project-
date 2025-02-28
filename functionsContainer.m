@@ -3342,7 +3342,7 @@ classdef functionsContainer
         
         end
         
-        function [Emission_Reading_Img,pks,plot_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
+        function [Emission_Reading_Img,pks,plot_img,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
         % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
         %
         % Syntax:
@@ -3380,8 +3380,10 @@ classdef functionsContainer
                 case "Background"
       
                     % Capture and save background images
-                    start(vid_ASI)
-                    wait(vid_ASI) % wait for frames to be acquired
+                    trigger(vid_ASI)
+                    while(vid_ASI.FramesAcquired < 3)
+                        pause(eps)
+                    end
                     background_img = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
 
                     % get average of background and store it 
@@ -3390,6 +3392,11 @@ classdef functionsContainer
                         background_img = rgb2gray(background_img);
                     end
                     save("Spectrometer_Settings.mat","background_img","-append")
+                    
+                    % assigning empty values for other variables
+                    Emission_Reading_Img = '';
+                    pks = '';
+                    plot_img = ''; 
 
 
                 case "Spectrometer"
@@ -3408,9 +3415,11 @@ classdef functionsContainer
 
                     
                     % Snapping a photo and gray scaling it 
-                    start(vid_ASI)
-                    wait(vid_ASI) % wait for frames to be acquired
-                    Emission_Reading_Img = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
+                    trigger(vid_ASI)
+                    while(vid_ASI.FramesAcquired < 3)
+                        pause(eps)
+                    end
+                    [Emission_Reading_Img,time_stamps] = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
 
                     Emission_Reading_Img = mean(Emission_Reading_Img, 4);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
