@@ -29,6 +29,13 @@ MyFuncs.AddPathFunc("LAB");
             src_UI.GainMode = "manual";
             src_UI.ContrastMode = "manual";
 
+            % UI camera capturing parameters
+            vid_UI.FramesPerTrigger = 1;
+            vid_UI.TriggerRepeat = Inf;
+            vid_UI.Timeout = 20; 
+            triggerconfig(vid_UI,'manual')
+            start(vid_UI)
+
            vid_UI.ReturnedColorSpace = 'grayscale'; % rgb, grayscale, bayer
 % Assuming vid_UI is correctly initialized
                 screenSize = get(0, 'ScreenSize'); % gets pixel resolution of screen

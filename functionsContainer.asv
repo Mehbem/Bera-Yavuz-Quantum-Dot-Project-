@@ -3307,11 +3307,11 @@ classdef functionsContainer
             deviceName = camInfo.DeviceInfo(i).DeviceName; % Get device name
             fprintf('Camera %d: ID = %d, Name = %s\n', i, deviceID, deviceName);
             if contains(deviceName,"ASI") %  checks to see if the detected device is the ASI camera
-                ASI_Device_ID = i;
+                ASI_Device_ID = deviceID;
                 camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_6248x4176';%'RGB8_1280x960'; 
                 fprintf("found ASI (spectrometer camera)\n")
             elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
-                UI_Device_ID = i;
+                UI_Device_ID = deviceID;
                 fprintf("found UI 148x Camera (nanowire camera)\n")
             else % any other camera would have to be an unknown device
                 fprintf("unknown device detected\n")
@@ -3342,7 +3342,7 @@ classdef functionsContainer
         
         end
         
-        function [Emission_Reading_Img,pks,plot_img,time_stamps] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
+        function [Emission_Reading_Img,pks,plot_img,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
         % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
         %
         % Syntax:
@@ -3392,6 +3392,11 @@ classdef functionsContainer
                         background_img = rgb2gray(background_img);
                     end
                     save("Spectrometer_Settings.mat","background_img","-append")
+                    
+                    % assigning empty values for other variables
+                    Emission_Reading_Img = '';
+                    pks = '';
+                    plot_img = ''; 
 
 
                 case "Spectrometer"

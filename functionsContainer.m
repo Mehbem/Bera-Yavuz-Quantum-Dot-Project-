@@ -3308,10 +3308,12 @@ classdef functionsContainer
             fprintf('Camera %d: ID = %d, Name = %s\n', i, deviceID, deviceName);
             if contains(deviceName,"ASI") %  checks to see if the detected device is the ASI camera
                 ASI_Device_ID = i;
+                ASI_name = deviceName; 
                 camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_6248x4176';%'RGB8_1280x960'; 
                 fprintf("found ASI (spectrometer camera)\n")
             elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
                 UI_Device_ID = i;
+                UI_name = deviceName; 
                 fprintf("found UI 148x Camera (nanowire camera)\n")
             else % any other camera would have to be an unknown device
                 fprintf("unknown device detected\n")
@@ -3319,12 +3321,12 @@ classdef functionsContainer
         end
         
         % establishing connection and parameters of ASI Device 
-        vid_ASI = videoinput(adaptor, ASI_Device_ID,camInfo.DeviceInfo(ASI_Device_ID).DefaultFormat); % function can take a third input to specify formatting (ASK Sreesh) 
+        vid_ASI = videoinput(adaptor, ASI_name,camInfo.DeviceInfo(ASI_Device_ID).DefaultFormat); % function can take a third input to specify formatting (ASK Sreesh) 
         src_ASI = getselectedsource(vid_ASI);
         %all_props_ASI = propinfo(vid_ASI); shows all settings user can change 
         
         % establishing connection and parameters of UI Device 
-        vid_UI = videoinput(adaptor, UI_Device_ID);
+        vid_UI = videoinput(adaptor, UI_name);
         src_UI = getselectedsource(vid_UI);
         % all_props_UI = propinfo(vid_UI); % shows all settings user can change 
         
@@ -3666,6 +3668,15 @@ classdef functionsContainer
         end
 
         function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting,SaveRawImg,total_ange)
+           % Defining the movement serial code for the rotation back to
+            % default zero
+            angle_hxd = dec2hex(floor(mod(0,360)*39822/100), 8);
+            input_str = "1ma" + angle_hxd; % "2" before ma is to be get from the ELLO software from thorlabs.
+            
+            % Commiting Command for movement 
+            fprintf(ell_motor, input_str);
+            pause(5)
+
 
             % defining angle of rotation 
             angle = 0:5:total_ange;
@@ -3689,6 +3700,8 @@ classdef functionsContainer
             file_name = sprintf('FSS %d',angle(rot_count)); 
             ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer",SaveRawImg,Spectrometer_Gratting,QD_ID,file_name);            
             end
+
+    
 
         end
       
