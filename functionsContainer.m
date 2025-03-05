@@ -1191,8 +1191,16 @@ classdef functionsContainer
             % Transformation factor from pixel to step
             X_Stepping = abs(Pixel_number_X  * x_factor); % pixels * (steps/pixels)
             Y_Stepping = abs(Pixel_number_Y * y_factor); % pixels * (steps/pixels)
+
+            % adding extra steps for backward since usually less
+            X_Stepping_back = X_Stepping * 1.1; % pixels * (steps/pixels)
+            Y_Stepping_back = Y_Stepping * 1.1; % pixels * (steps/pixels)
+
             X_Stepping = round(X_Stepping); % pixels * (steps/pixels)
             Y_Stepping = round(Y_Stepping); % pixels * (steps/pixels)
+            X_Stepping_back = ceil(X_Stepping_back); % pixels * (steps/pixels)
+            Y_Stepping_back = ceil(Y_Stepping_back); % pixels * (steps/pixels)
+
 
             % print statements for number of steps (uncomment for debugging
             % purposes) 
@@ -1221,7 +1229,7 @@ classdef functionsContainer
 
 
                 case 'bottomleft'
-                    X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping);
+                    X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
@@ -1241,7 +1249,7 @@ classdef functionsContainer
                     end
                     StepQueue(obj,X_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
-                    Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping);
+                    Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
@@ -1249,13 +1257,13 @@ classdef functionsContainer
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
                 case 'topleft'
-                    X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping);
+                    X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     StepQueue(obj,X_Stepping,Frequency);
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
-                    Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping);
+                    Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
@@ -3344,7 +3352,7 @@ classdef functionsContainer
         
         end
         
-        function [Emission_Reading_Img,pks,plot_img,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
+        function [Emission_Reading_Img,pks,plot_filename,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,FSS)
         % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
         %
         % Syntax:
@@ -3486,7 +3494,10 @@ classdef functionsContainer
                     
                     
                     % Plot the spectrum data
-                    plot(wvlength, spectrum_sum);
+                    plot(wvlength, spectrum_sum,'b-');
+
+                     % Set exact limits for the x-axis
+                    xlim([min(wvlength), max(wvlength)]);
                     
                     % Set title and labels
                     title_font = sprintf("QD Spectrum Plot: [%d %d]",QD_ID);
@@ -3494,12 +3505,6 @@ classdef functionsContainer
                     xlabel('Wavelength [nm]');
                     ylabel('Arb. Counts');
 
-                    % plot image
-                    plot_img = gcf; 
-                    
-                    % Adjust the figure size
-                    set(gcf, 'Position', [100, 100, 1200, 800]); % [left bottom width height]
-        
                     % finding the main peaks 
                     [pks,locs,~,~] = findpeaks(spectrum_sum,wvlength,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
 
@@ -3525,9 +3530,12 @@ classdef functionsContainer
                     xlabel('Wavelength [nm]');
                     ylabel('Arb. Counts');
 
+                    % plot image
+                    plot_img = gcf; 
 
                     % Save the plot as a .png file
-                    saveas(gcf, strcat(qd_data_ASI_plots_directory, '_wvl_graph.png'));
+                    plot_filename = strcat(qd_data_ASI_plots_directory, '_wvl_graph.png'); 
+                    saveas(gcf, plot_filename);
 
                     % text file creation 
                     data_matrix = [wvlength;spectrum_sum];
