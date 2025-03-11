@@ -3443,7 +3443,7 @@ classdef functionsContainer
                     while(vid_ASI.FramesAcquired < 3)
                         pause(eps)
                     end
-                    [Emission_Reading_Img,time_stamps] = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
+                    [Emission_Reading_Img] = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
 
                     Emission_Reading_Img = mean(Emission_Reading_Img, 4);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
