@@ -1178,7 +1178,7 @@ classdef functionsContainer
             end
         end
 
-        function Dual_ANC300_Movement(obj,Pixel_number_X,Pixel_number_Y,Axis_ID_Direction,ANC300,Frequency,x_factor,y_factor)
+        function Dual_ANC300_Movement(obj,Pixel_number_X,Pixel_number_Y,Axis_ID_Direction,ANC300,Frequency,x_factor,y_factor,x_factor_back,y_factor_back)
              % Description:
                 % - similar to ANC300Movement function, however, allows simultaneous movement in both axes without setting voltage and frequency (faster compared to ANC300Movement)
             % Inputs:
@@ -1189,23 +1189,24 @@ classdef functionsContainer
             
             
             % Transformation factor from pixel to step
+           
             X_Stepping = abs(Pixel_number_X  * x_factor); % pixels * (steps/pixels)
             Y_Stepping = abs(Pixel_number_Y * y_factor); % pixels * (steps/pixels)
 
-            % adding extra steps for backward since usually less
-            X_Stepping_back = X_Stepping * 1.1; % pixels * (steps/pixels)
-            Y_Stepping_back = Y_Stepping * 1.1; % pixels * (steps/pixels)
+            % Transformation factor from pixel to step (reverse movement) 
+            X_Stepping_back = abs(Pixel_number_X * x_factor_back); % pixels * (steps/pixels)
+            Y_Stepping_back = abs(Pixel_number_Y * y_factor_back); % pixels * (steps/pixels)
 
             X_Stepping = round(X_Stepping); % pixels * (steps/pixels)
             Y_Stepping = round(Y_Stepping); % pixels * (steps/pixels)
-            X_Stepping_back = ceil(X_Stepping_back); % pixels * (steps/pixels)
-            Y_Stepping_back = ceil(Y_Stepping_back); % pixels * (steps/pixels)
+            X_Stepping_back = round(X_Stepping_back); % pixels * (steps/pixels)
+            Y_Stepping_back = round(Y_Stepping_back); % pixels * (steps/pixels)
 
 
             % print statements for number of steps (uncomment for debugging
             % purposes) 
-            % fprintf("X_step: %d\n",X_Stepping)
-            % fprintf("Y_step: %d\n",Y_Stepping)
+            %fprintf("X_step: %d\n",X_Stepping)
+            %fprintf("Y_step: %d\n",Y_Stepping)
 
             if X_Stepping >= 500 | Y_Stepping >= 500 
                 error("LARGE STEPPING ERROR, Call Van Damn")
@@ -1218,13 +1219,15 @@ classdef functionsContainer
                     if X_Stepping ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
-                    StepQueue(obj,X_Stepping,Frequency); 
+                    StepQueue(obj,X_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepu 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end                    
                     StepQueue(obj,Y_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
 
@@ -1234,12 +1237,14 @@ classdef functionsContainer
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     StepQueue(obj,X_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepu 2 %d",Y_Stepping);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     StepQueue(obj,Y_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
                 case 'topright'
@@ -1248,12 +1253,14 @@ classdef functionsContainer
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     StepQueue(obj,X_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     StepQueue(obj,Y_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
 
                 case 'topleft'
@@ -1262,12 +1269,14 @@ classdef functionsContainer
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     StepQueue(obj,X_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     StepQueue(obj,Y_Stepping,Frequency);
+                    pause(1)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
             end
        
@@ -2107,7 +2116,7 @@ classdef functionsContainer
 
             % other paramters of use
             Frequency = 20; 
-            angle = 45.1; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
+            angle = 44.8; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
 
             % X and y factors
             Read_XY_factor  = XY_Factor_Identifier(obj,"","Read","LAB"); 
@@ -2210,12 +2219,13 @@ classdef functionsContainer
 
             % other paramters of use
             Frequency = 20; 
-            angle = 45.1; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
+            angle = 44.8; % Pre Aug 16th 43.696474776653320; % use the angle found by the algorithm in the XYANC300Axes script 
 
             % X and y factors
             Read_XY_factor  = XY_Factor_Identifier(obj,"","Read","LAB"); 
             x_factor = Read_XY_factor.X_factor; 
             y_factor = Read_XY_factor.Y_factor; 
+            factors = load("Spectrometer_Settings.mat","X_Factor_Back","Y_Factor_Back");
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
             Iterations = 0; 
@@ -2249,6 +2259,7 @@ classdef functionsContainer
             %fprintf("QD Coord Difference: X = %.3f | Y = %.3f\n",ShortestDistance)
             %fprintf("Closest QD distance: %.2f\n",Eucli_ShortestDistance)
 
+            % title_text = "test"; 
             % figure("Name",title_text,"Color",skyBlue)
             % imshow(rotated_image)
             % hold on; 
@@ -2259,15 +2270,15 @@ classdef functionsContainer
             % plot(LEDSpotCentroid_rotated(1),LEDSpotCentroid_rotated(2),"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0],"MarkerFaceColor",[1 0.5 0],"Marker","o","LineStyle","none"); % Rotated LED plotted 
             % plot(StartingQD_rotated(1),StartingQD_rotated(2), 'bo', 'MarkerSize', 10,'MarkerFaceColor','b','LineStyle',"none");
             % legend("Virtual QD", "Real QD", "LED spot", "Starting QD")
-            % 
+
 
             % Finding direction need to travel to in order to get to QD 
             [direction] = ClosestPtDirection(obj,ShortestDistance); 
             %fprintf("%s\n",direction)
             % Moving to the startingQD
-            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor,y_factor)
+            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor/2,y_factor/2,factors.X_Factor_Back/2,factors.Y_Factor_Back/2)
             pause(0.2)
-            if Iterations > 50
+            if Iterations > 6
                 %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
                 break
             end
@@ -3406,21 +3417,24 @@ classdef functionsContainer
                     % assigning empty values for other variables
                     Emission_Reading_Img = '';
                     pks = '';
-                    plot_img = ''; 
+                    plot_filename = ''; 
 
 
                 case "Spectrometer"
 
                     %Parameters for different gratings
                     if Spectrometer_Gratting == 1800
-
                         % Define Wavelength Range
                         wvlngth_start = data.min_wvlen_1800mm;
                         wvlngth_end = data.max_wvlen_1800mm; 
+
                     elseif Spectrometer_Gratting == 1200
 
                     elseif Spectrometer_Gratting == 150
-
+                         % Define Wavelength Range
+                        wvlngth_start = data.min_wvlen_150mm;
+                        wvlngth_end = data.max_wvlen_150mm; 
+                        
                     end
 
                     
@@ -3441,8 +3455,9 @@ classdef functionsContainer
                     
                     % Auto-size vertical window
                     [height,width] = size(Emission_Reading_Img); 
-                    central_row = height/2; 
-                    window_size = round(height*0.15); % 40% below and above the central_row 
+                    %central_row = height/2; 
+                    central_row = 1000; 
+                    window_size = round(height*0.15); % 15% below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
@@ -3454,8 +3469,9 @@ classdef functionsContainer
                     
     
                     % Init wavelength
-                    wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
-                   
+                    %wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
+                    load("Wavelength.mat","wavlength")
+                    wvlength = wavlength'; 
 
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
@@ -3494,10 +3510,15 @@ classdef functionsContainer
                     
                     
                     % Plot the spectrum data
-                    plot(wvlength, spectrum_sum,'b-');
+                    % For the 150 ln/mm grating measurements on March, 2025
+                    % Crop wavelength and spectrum_sum to remove emission
+                    % at ~820-830 nm.
+                    wavelength_crop = wvlength(450:end);
+                    spectrum_sum_crop = spectrum_sum(450:end);
+                    plot(wavelength_crop, spectrum_sum_crop,'b-');
 
                      % Set exact limits for the x-axis
-                    xlim([min(wvlength), max(wvlength)]);
+                    xlim([min(wavelength_crop), max(wavelength_crop)]);
                     
                     % Set title and labels
                     title_font = sprintf("QD Spectrum Plot: [%d %d]",QD_ID);
@@ -3506,7 +3527,7 @@ classdef functionsContainer
                     ylabel('Arb. Counts');
 
                     % finding the main peaks 
-                    [pks,locs,~,~] = findpeaks(spectrum_sum,wvlength,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
+                    [pks,locs,~,~] = findpeaks(spectrum_sum_crop,wavelength_crop,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
 
                     % Create text strings for top 3 peaks
                     peak_text = cell(3,1);

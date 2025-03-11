@@ -1,13 +1,13 @@
 % Bera Yavuz 
 % Photo Debug Testing 
-clear;
-clc; 
-tic
+% clear;
+% clc; 
+% tic
 directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools"; 
 addpath(directoryPath_Scripts)
 
 % Create Folders for the day 
-py.qd_data_folder_creation.create_qd_data_directories()
+%py.qd_data_folder_creation.create_qd_data_directories()
 
 % Adding all required pathways for functions 
 pathway_all_functions = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
@@ -27,12 +27,11 @@ ASI_Settings.Brightness = 50;
 UI_Settings = ""; 
 
 
-[vid_ASI,src_ASI,vid_UI,src_UI,CamInfo] = funcs.ASI_UI_CameraInit(ASI_Settings,UI_Settings);
 
-
+% Uncomment to take photo
 [UI_Position_Img] = funcs.UI_Snap_Img(vid_UI,src_UI,"Yes",[1 1]); 
-UI_Position_Img = flipud(UI_Position_Img); 
-
+% Uncomment to use existing photo
+%UI_Position_Img = imread("C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\05_03_2025_Test\Position_uEYE\[1 1]_NanoWireChip_Pos.jpg"); 
 
 % Filtering Settings
 scaling = 0.5; 
@@ -85,7 +84,7 @@ plot(LEDSpotCentroidX,LEDSpotCentroidY,"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0
 hold off; 
 % -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 % Plotting rotated image 
-figure_title = sprintf("Virtual and Real QD rotated: %s",UI_Position_Img); 
+figure_title = sprintf("Virtual and Real QD rotated: %s","Nice"); 
 figure("Name",figure_title,"NumberTitle","off","Color",skyBlue)
 imshow(rotated_image);
 hold on;
