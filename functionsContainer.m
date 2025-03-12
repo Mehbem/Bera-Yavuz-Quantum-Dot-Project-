@@ -2276,7 +2276,7 @@ classdef functionsContainer
             [direction] = ClosestPtDirection(obj,ShortestDistance); 
             %fprintf("%s\n",direction)
             % Moving to the startingQD
-            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor/2,y_factor/2,factors.X_Factor_Back/2,factors.Y_Factor_Back/2)
+            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
             pause(0.2)
             if Iterations > 6
                 %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)

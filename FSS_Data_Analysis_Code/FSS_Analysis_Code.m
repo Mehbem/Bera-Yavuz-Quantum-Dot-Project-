@@ -5,7 +5,7 @@ fit_points = 1e3;% number of points to perform fit analysis on
 C = colororder; % get color order for plotting
 
 % defining qd ID
-qd = [141 2];
+qd = [169 5];
 power = "3_13"; 
 
 %Initialise variables
@@ -15,7 +15,7 @@ FSS_delta = nan(3,2); % fine structure splitting from zero
 FSS_std_dev = nan(3,2); % fine structure splitting standard deviation
 
 % search current file for all needed things
-desired_folder = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\28_02_2025_Test\FSS_Measurements\Spectrometer_Plots_FSS\QD_[141 2]\Set_1"; % put in the name of the folder with the desired angles 
+desired_folder = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\28_02_2025_Test\FSS_Measurements\Spectrometer_Plots_FSS\QD_[169 5]\Set_2"; % put in the name of the folder with the desired angles 
 
 fileList = dir(fullfile(desired_folder, '*.txt*')); % Find all .txt files in latestFolder
 fileList = fileList(~[fileList.isdir]); % Remove directories from list
@@ -50,7 +50,7 @@ for i = 1:numberOfFiles
     bckgrnd_val = sum(qd_emission(1:N_vals))/N_vals; 
     debug_file = i; % if code fails can see which file it failed on
       if i==1
-        [pks, locs] = findpeaks(qd_emission, lambda,'MinPeakHeight',80,'NPeaks',3,'SortStr','descend','MinPeakDistance',0.5); % find peaks from data using find peak function uses y then x
+        [pks, locs] = findpeaks(qd_emission, lambda,'MinPeakHeight',80,'NPeaks',4,'SortStr','descend','MinPeakDistance',0.2); % find peaks from data using find peak function uses y then x
         [~, idx] = sort(locs); % sort order of peak in order of wavelength, will default to highest no. counts if not.
         locs = locs(idx);% create variable for peak location (lambda)
         pks = pks(idx);% sort peak according to location (lambda)
@@ -75,14 +75,14 @@ for i = 1:numberOfFiles
     ydata_X = qd_emission(lambda>X_low & lambda<X_high); % new varibale to define the peak range (counts)
     [x_fit, y_fit, fit_model, gof] = fit_lorentzian(xdata_X, ydata_X, fit_points, bckgrnd_val);% custom function written by Rubayet   , gof = goodness of fit 
     %[x_fit, y_fit, fit_model, gof] = fit_gaussian(xdata_X, ydata_X, fit_points, bckgrnd_val);% custom function written by Rubayet   , gof = goodness of fit 
-    [pks, locs] = findpeaks(y_fit, x_fit,'MinPeakHeight',bckgrnd_val+65);% find peak of fitted function
+    [pks, locs] = findpeaks(y_fit, x_fit,'MinPeakHeight',bckgrnd_val);% find peak of fitted function
     X_peaks_locs(i,:) = locs; % find location of max point
 
     xdata_XX = lambda(lambda>XX_low & lambda<XX_high);% as above but for XX
     ydata_XX = qd_emission(lambda>XX_low & lambda<XX_high);
     [x_fit2, y_fit2, fit_model2, gof2] = fit_lorentzian(xdata_XX, ydata_XX, fit_points, bckgrnd_val); 
     %[x_fit2, y_fit2, fit_model2, gof2] = fit_gaussian(xdata_XX, ydata_XX, fit_points, bckgrnd_val); 
-    [pks, locs] = findpeaks(y_fit2, x_fit2,'MinPeakHeight', bckgrnd_val+60);
+    [pks, locs] = findpeaks(y_fit2, x_fit2,'MinPeakHeight', bckgrnd_val);
     XX_peaks_locs(i,:) = locs;
 
 end
