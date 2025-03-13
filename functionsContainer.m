@@ -2196,7 +2196,6 @@ classdef functionsContainer
         function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,accuracy_margin)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
 
-
             % Filtering Settings
             scaling = 0.5;
             skyBlue = [0.53, 0.81, 0.92];
@@ -2278,7 +2277,7 @@ classdef functionsContainer
             % Moving to the startingQD
             Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
             pause(0.2)
-            if Iterations > 6
+            if Iterations > 8
                 %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
                 break
             end
