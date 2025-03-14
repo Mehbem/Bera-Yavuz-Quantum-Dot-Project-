@@ -42,6 +42,9 @@ XX_ID = 1; % assign which ever peak is the biexciton
 
 for i = 1:numberOfFiles
     fileName = fileList(i).name;% go to i-th file
+    if contains(fileName,"90")
+        fprintf("%d",i)
+    end
     data = readtable(fullfile(desired_folder,fileName),'HeaderLines', 7, 'PreserveVariableNames', true);% read data from txt. file, skip fist 7 lines
     % data = table2array(data(:,1:end-1)); % convert data from table to array, will exclude the last colunm with -1 (sometimes an empty column appears and causes an issue)
     data = table2array(data(:,1:end)); % convert data from table to array, will exclude the last colunm with -1 (sometimes an empty column appears and causes an issue)

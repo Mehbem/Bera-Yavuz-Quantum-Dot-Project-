@@ -3387,14 +3387,13 @@ classdef functionsContainer
         % Outputs:
         %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
             data = load("Spectrometer_Settings.mat");
+            ROI_Settings = load("ROI_Settings.mat"); 
 
             date = Fetch_Date(obj); % fetching today's date
             date_test =  date + "_Test"; 
             
             % Main pathway for where the background photos end up 
             pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
-            filename_background = sprintf("background_%dmm_grating_%s",Spectrometer_Gratting,date);
-
 
             switch ImgType
                 case "Background"
@@ -3421,22 +3420,6 @@ classdef functionsContainer
 
                 case "Spectrometer"
 
-                    %Parameters for different gratings
-                    if Spectrometer_Gratting == 1800
-                        % Define Wavelength Range
-                        wvlngth_start = data.min_wvlen_1800mm;
-                        wvlngth_end = data.max_wvlen_1800mm; 
-
-                    elseif Spectrometer_Gratting == 1200
-
-                    elseif Spectrometer_Gratting == 150
-                         % Define Wavelength Range
-                        wvlngth_start = data.min_wvlen_150mm;
-                        wvlngth_end = data.max_wvlen_150mm; 
-                        
-                    end
-
-                    
                     % Snapping a photo and gray scaling it 
                     trigger(vid_ASI)
                     while(vid_ASI.FramesAcquired < 3)
@@ -3448,15 +3431,15 @@ classdef functionsContainer
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
                         Emission_Reading_Img = rgb2gray(Emission_Reading_Img);
                     end
+
                     % grab background average
                     background_Img = data.background_img; 
       
                     
                     % Auto-size vertical window
                     [height,width] = size(Emission_Reading_Img); 
-                    %central_row = height/2; 
-                    central_row = 1000; 
-                    window_size = round(height*0.15); % 15% below and above the central_row 
+                    central_row = ROI_Settings.ROI_Middle_Pixel; 
+                    window_size = round(height*ROI_Settings.ROI_Percentage_Decimal); % ROI_Percent below and above the central_row 
                     valid_rows = max(1, central_row - window_size):min(height, central_row + window_size);
 
                     
@@ -3466,11 +3449,11 @@ classdef functionsContainer
                     
                     spectrum_sum = spectrum_sum - background_Img ;
                     
-    
+   
                     % Init wavelength
                     %wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
-                    load("Wavelength.mat","wavlength")
-                    wvlength = wavlength'; 
+                    load("Wavelength.mat","wavelength")
+                    wvlength = wavelength'; 
 
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
