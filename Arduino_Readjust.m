@@ -1,10 +1,19 @@
 % Arduino Angle Correction Code
+Arduino = Arduino_Init; 
+angle = read_encoder(Arduino); 
+
 
 function Arduino = Arduino_Init()
     %connect to Arduino
+    %serialPort = "COM8";
+    % try
+    %     Arduino = serialport(serialPort,'TimeOut',1,'BaudRate',9600);% Opening serial port to arduino
+    % 
     serialPort = 'COM8';
+    Arduino = serial(serialPort,'TimeOut',1,'BaudRate',9600);
     try
-        Arduino = serialport(serialPort,'TimeOut',1,'BaudRate',9600);% Opening serial port to arduino
+        fopen(Arduino);      % Opening serial port to arduino
+        %handles.serialConnect = serialConnect;
     catch exception
         exception; %#ok<*VUNUS>
         exception.message;

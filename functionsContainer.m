@@ -1570,7 +1570,8 @@ classdef functionsContainer
                     % Init wavelength
                     %wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
                     load("Wavelength.mat","wavelength")
-                    wvlength = wavelength'; 
+                    wvlength = wavelength';
+                    wvlength = wvlength + 1.344; 
 
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
@@ -1622,12 +1623,12 @@ classdef functionsContainer
                     % For the 150 ln/mm grating measurements on March, 2025
                     % Crop wavelength and spectrum_sum to remove emission
                     % at ~820-830 nm.
-                    wavelength_crop = wvlength(450:end);
-                    spectrum_sum_crop = spectrum_sum(450:end);
-                    plot(wavelength_crop, spectrum_sum_crop,'b-');
+                    %wavelength_crop = wvlength(450:end);
+                    %spectrum_sum_crop = spectrum_sum(450:end);
+                    plot(wvlength, spectrum_sum,'b-');
 
                      % Set exact limits for the x-axis
-                    xlim([min(wavelength_crop), max(wavelength_crop)]);
+                    xlim([min(wvlength), max(wvlength)]);
                     
                     % Set title and labels
                     title_font = sprintf("QD Spectrum Plot: [%d %d]",QD_ID);
@@ -1636,7 +1637,7 @@ classdef functionsContainer
                     ylabel('Arb. Counts');
 
                     % finding the main peaks 
-                    [pks,locs,~,~] = findpeaks(spectrum_sum_crop,wavelength_crop,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
+                    [pks,locs,~,~] = findpeaks(spectrum_sum,wvlength,'SortStr','descend','NPeaks',3,'MinPeakDistance',0.5);
 
                     % Create text strings for top 3 peaks
                     peak_text = cell(3,1);
