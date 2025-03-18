@@ -705,61 +705,80 @@ classdef functionsContainer
             y_factor = Read_XY_factor.Y_factor; 
             factors = load("Spectrometer_Settings.mat","X_Factor_Back","Y_Factor_Back");
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            
+            
             Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
-            Iterations = 0; 
+            Iterations = 0; % initializing iterations 
 
+            % variables defined for checking image was captured when it was clear and not blurry 
+            maxAttempts = 4; 
+            attempt = 0; 
+            success = false;
 
             
             while Eucli_ShortestDistance > accuracy_margin
-            Iterations = Iterations + 1; 
+                Iterations = Iterations + 1; 
+                
+                while attempt < maxAttempts && ~success
+                    try
+                        attempt = attempt + 1;
+                        pause(1); % Wait 1 second before each attempt
 
-            % Snapping Photo 
-            
-            [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
-        
+                        % Snapping Photo 
+                        [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
+    
+                        % Identifying real QD
+                        [~,~,CopyCentroid,~,~,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
+                        
+                        success = true; % if both succeed, exit loop 
+                    catch
+                         % If this was the last attempt, just move on
+                        if attempt == maxAttempts
+                            error("Check camera to make sure it's working")
+                        end
+                    end
+                end
+                % Finds QD across the diagonal of image and collects data to form two main axes
+                [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
 
-            % Identifying real QD
-            [grayImage,centroid,CopyCentroid,mask,Contrast_adjusted_Img,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
-            
-            % Finds QD across the diagonal of image and collects data to form two main axes
-            [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
-            % Creates grid lines to find intersections
-            [x_main,y,x_perp,y_perp,b,perp_b,m,perp_m] = Finalized_GridLines(obj,allNextPts,allPerpPts); 
-            % Creates and plots Virtual and Real QD
-            [VirtualQDList,FullQDList_sorted,AllPossibleQDList,RealQDCentroids,centroidx,centroidy] = Finalized_VirtualQD(obj,num_lines,sep_red,sep_blue,m,perp_m,b,perp_b,CopyCentroid,Img,mask_scaled); 
-            % Rotates Img and dots displayed 
-            [VirtualQDList_rotated,RealQD_rotated,LEDSpotCentroid_rotated,Table_FullQDList_sorted,Rotated_Table_FullQDList_sorted,rotated_image] = Rotated_Img_n_Pts(obj,angle,MaskedImage,FullQDList_sorted,VirtualQDList,RealQDCentroids,LEDSpotCentroid);
-            %rotated_image = imrotate(MaskedImage, angle,"bilinear","crop");
-            % Finding the Starting Point based on Image 
-            [StartingQD_rotated,ShortestDistance,ID] = FindClosestPt(obj,Rotated_Table_FullQDList_sorted.("QD Coordinates"),LEDSpotCentroid_rotated); 
-            Eucli_ShortestDistance = EucliDistance(obj,LEDSpotCentroid_rotated,StartingQD_rotated); 
-            StartingQD = Table_FullQDList_sorted.("QD Coordinates")(ID,:); 
-            %fprintf("QD Coord Difference: X = %.3f | Y = %.3f\n",ShortestDistance)
-            %fprintf("Closest QD distance: %.2f\n",Eucli_ShortestDistance)
+                % Creates grid lines to find intersections
+                [~,~,~,~,b,perp_b,m,perp_m] = Finalized_GridLines(obj,allNextPts,allPerpPts); 
 
-            % title_text = "test"; 
-            % figure("Name",title_text,"Color",skyBlue)
-            % imshow(rotated_image)
-            % hold on; 
-            % title_text_iter = sprintf(title_text + "iteration: %d",Iterations); 
-            % title(title_text_iter)
-            % plot(VirtualQDList_rotated(:,1), VirtualQDList_rotated(:,2), 'ro', 'MarkerSize', 7, 'MarkerFaceColor', 'r',"LineStyle","none"); % Rotated Virtual QD plotted
-            % plot(RealQD_rotated(:,1), RealQD_rotated(:,2), 'go', 'MarkerSize', 7, 'MarkerFaceColor', 'g',"LineStyle","none"); % Rotated Real QD plotted
-            % plot(LEDSpotCentroid_rotated(1),LEDSpotCentroid_rotated(2),"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0],"MarkerFaceColor",[1 0.5 0],"Marker","o","LineStyle","none"); % Rotated LED plotted 
-            % plot(StartingQD_rotated(1),StartingQD_rotated(2), 'bo', 'MarkerSize', 10,'MarkerFaceColor','b','LineStyle',"none");
-            % legend("Virtual QD", "Real QD", "LED spot", "Starting QD")
+                % Creates and plots Virtual and Real QD
+                [VirtualQDList,FullQDList_sorted,~,RealQDCentroids,~,~] = Finalized_VirtualQD(obj,num_lines,sep_red,sep_blue,m,perp_m,b,perp_b,CopyCentroid,Img,mask_scaled); 
+               
+                % Rotates Img and dots displayed 
+                [~,~,LEDSpotCentroid_rotated,Table_FullQDList_sorted,Rotated_Table_FullQDList_sorted,~] = Rotated_Img_n_Pts(obj,angle,MaskedImage,FullQDList_sorted,VirtualQDList,RealQDCentroids,LEDSpotCentroid);
 
+                % Finding the Starting Point based on Image 
+                [StartingQD_rotated,ShortestDistance,ID] = FindClosestPt(obj,Rotated_Table_FullQDList_sorted.("QD Coordinates"),LEDSpotCentroid_rotated); 
+                Eucli_ShortestDistance = EucliDistance(obj,LEDSpotCentroid_rotated,StartingQD_rotated); 
+                StartingQD = Table_FullQDList_sorted.("QD Coordinates")(ID,:); 
 
-            % Finding direction need to travel to in order to get to QD 
-            [direction] = ClosestPtDirection(obj,ShortestDistance); 
-            %fprintf("%s\n",direction)
-            % Moving to the startingQD
-            Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
-            pause(0.2)
-            if Iterations > 8
-                %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
-                break
-            end
+    
+                % title_text = "test"; 
+                % figure("Name",title_text,"Color",skyBlue)
+                % imshow(rotated_image)
+                % hold on; 
+                % title_text_iter = sprintf(title_text + "iteration: %d",Iterations); 
+                % title(title_text_iter)
+                % plot(VirtualQDList_rotated(:,1), VirtualQDList_rotated(:,2), 'ro', 'MarkerSize', 7, 'MarkerFaceColor', 'r',"LineStyle","none"); % Rotated Virtual QD plotted
+                % plot(RealQD_rotated(:,1), RealQD_rotated(:,2), 'go', 'MarkerSize', 7, 'MarkerFaceColor', 'g',"LineStyle","none"); % Rotated Real QD plotted
+                % plot(LEDSpotCentroid_rotated(1),LEDSpotCentroid_rotated(2),"MarkerSize",5,"MarkerEdgeColor",[1 0.5 0],"MarkerFaceColor",[1 0.5 0],"Marker","o","LineStyle","none"); % Rotated LED plotted 
+                % plot(StartingQD_rotated(1),StartingQD_rotated(2), 'bo', 'MarkerSize', 10,'MarkerFaceColor','b','LineStyle',"none");
+                % legend("Virtual QD", "Real QD", "LED spot", "Starting QD")
+    
+    
+                % Finding direction need to travel to in order to get to QD 
+                [direction] = ClosestPtDirection(obj,ShortestDistance); 
+                %fprintf("%s\n",direction)
+                % Moving to the startingQD
+                Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
+                pause(0.2)
+                if Iterations > 8
+                    %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+                    break
+                end
             end 
             
             
@@ -1480,29 +1499,29 @@ classdef functionsContainer
         end
         
         function [Emission_Reading_Img,pks,plot_filename,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,Process)
-        % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
-        %
-        % Syntax:
-        %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_Gratting, QD_ID)
-        %
-        % Description:
-        %   This function captures an image from the ASI spectrometer system, processes the image based on the 
-        %   selected image type ("Background" or "Spectrometer"), and applies necessary corrections such as 
-        %   background subtraction and grayscale conversion. If the image type is "Spectrometer," it extracts 
-        %   spectral data, detects peak intensities, and saves a wavelength spectrum plot.
-        %
-        % Inputs:
-        %   obj                  - Object instance (not explicitly used in the function but required by class methods)
-        %   vid_ASI              - Video input object for the ASI camera
-        %   src_ASI              - Source properties of the ASI camera
-        %   ImgType              - Type of image to capture: "Background" or "Spectrometer"
-        %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
-        %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
-        %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
-        %   FSS                     - Specifies its for fine struct splitting (FSS degrees #)
-        %
-        % Outputs:
-        %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
+            % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
+            %
+            % Syntax:
+            %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_Gratting, QD_ID)
+            %
+            % Description:
+            %   This function captures an image from the ASI spectrometer system, processes the image based on the 
+            %   selected image type ("Background" or "Spectrometer"), and applies necessary corrections such as 
+            %   background subtraction and grayscale conversion. If the image type is "Spectrometer," it extracts 
+            %   spectral data, detects peak intensities, and saves a wavelength spectrum plot.
+            %
+            % Inputs:
+            %   obj                  - Object instance (not explicitly used in the function but required by class methods)
+            %   vid_ASI              - Video input object for the ASI camera
+            %   src_ASI              - Source properties of the ASI camera
+            %   ImgType              - Type of image to capture: "Background" or "Spectrometer"
+            %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
+            %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
+            %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
+            %   FSS                     - Specifies its for fine struct splitting (FSS degrees #)
+            %
+            % Outputs:
+            %   Emission_Reading_Img  - Captured and processed emission image (grayscale)
             data = load("Spectrometer_Settings.mat");
             ROI_Settings = load("ROI_Settings.mat"); 
 
@@ -1701,31 +1720,31 @@ classdef functionsContainer
         end
     
         function [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,SaveImg,QD_ID) 
-        % UI_Snap_Img - Captures and saves an image from the UI camera.
-        %
-        % Syntax:
-        %   [UI_Position_Img] = UI_Snap_Img(obj, vid_UI, src_UI, SaveImg, QD_ID)
-        %
-        % Description:
-        %   This function captures an image from the UI camera, which is used for position tracking. 
-        %   The captured image is optionally saved based on the `SaveImg` parameter.
-        %
-        % Inputs:
-        %   obj       - Object instance (not explicitly used in this function but required for class methods)
-        %   vid_UI    - Video input object for the UI camera
-        %   src_UI    - Source properties of the UI camera (not used in this function)
-        %   SaveImg   - String flag ("Yes" or "No") indicating whether to save the captured image
-        %   QD_ID     - Identifier for the Quantum Dot sample or NanoWire chip position
-        %
-        % Outputs:
-        %   UI_Position_Img - Captured image from the UI camera
-        %
-        % Functionality:
-        %   - Captures an image using the UI camera.
-        %   - Saves the image to a predefined directory if `SaveImg` is "Yes".
-        %   - The saved image is named based on the `QD_ID` and timestamp.
-        %
-            % turning off vertical and horizontal flip 
+            % UI_Snap_Img - Captures and saves an image from the UI camera.
+            %
+            % Syntax:
+            %   [UI_Position_Img] = UI_Snap_Img(obj, vid_UI, src_UI, SaveImg, QD_ID)
+            %
+            % Description:
+            %   This function captures an image from the UI camera, which is used for position tracking. 
+            %   The captured image is optionally saved based on the `SaveImg` parameter.
+            %
+            % Inputs:
+            %   obj       - Object instance (not explicitly used in this function but required for class methods)
+            %   vid_UI    - Video input object for the UI camera
+            %   src_UI    - Source properties of the UI camera (not used in this function)
+            %   SaveImg   - String flag ("Yes" or "No") indicating whether to save the captured image
+            %   QD_ID     - Identifier for the Quantum Dot sample or NanoWire chip position
+            %
+            % Outputs:
+            %   UI_Position_Img - Captured image from the UI camera
+            %
+            % Functionality:
+            %   - Captures an image using the UI camera.
+            %   - Saves the image to a predefined directory if `SaveImg` is "Yes".
+            %   - The saved image is named based on the `QD_ID` and timestamp.
+            %
+                % turning off vertical and horizontal flip 
 
             
             % fetching today's date
