@@ -15,8 +15,38 @@ serial_comd = sprintf("stepu 1 %d",step_num);
 % send serial command to step
 fprintf(ANC300,serial_comd)
 
-for i = 1:10
-    voltage = query(ANC300, "geto 1");
-    fprintf("%s\n",voltage)
-    pause(2)
+% Waits until movement is safe 
+step_queue_improved(ANC300,1,20)
+
+
+
+function step_queue_improved(ANC300,axis,timeout)
+% ANC300 - obj that contains the serial port for the piezo
+% Axis - axis of interest that is in movement (1 = x-axis, 2 = y-axis)
+% timeout - how long the movement could take before timing out should be
+% considered (unit seconds) 
+    flush(ANC300) % flush previous undesirable data 
+    voltage = 1; % Initialize voltage to a large number
+    threshold = 0; % Set a small threshold for stopping
+    tic
+    while abs(voltage) > threshold  % Keep looping until voltage ≈ 0
+        serial_comd = sprintf("geto %d",axis);
+        fprintf(ANC300,serial_comd); % Sending command to read current voltage output
+        for i = 1:2
+            serial_message = fscanf(ANC300); % reading current voltage output
+            if i == 2
+                serial_message = string(serial_message);
+                serial_messages = strsplit(serial_message);
+                voltage = str2double(serial_messages(3)); % extract voltage number from list
+            end
+        end
+        flush(ANC300) % getting rid of buffered text to prevent filling up 
+        if toc > timeout
+            error("movement is taking longer then expected potential issue detected")
+        end
+        
+    end
+    pause(2) % extra pause just in case 
+    
+    %disp("Voltage reached zero, stopping loop.");
 end
