@@ -32,7 +32,7 @@ classdef functionsContainer
             %fprintf("X_step: %d\n",X_Stepping)
             %fprintf("Y_step: %d\n",Y_Stepping)
 
-            if X_Stepping >= 500 | Y_Stepping >= 500 
+            if X_Stepping >= 200 | Y_Stepping >= 200 
                 error("LARGE STEPPING ERROR, Call Van Damn")
             end
 
@@ -710,14 +710,14 @@ classdef functionsContainer
             Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
             Iterations = 0; % initializing iterations 
 
-            % variables defined for checking image was captured when it was clear and not blurry 
-            maxAttempts = 4; 
-            attempt = 0; 
-            success = false;
-
             
             while Eucli_ShortestDistance > accuracy_margin
                 Iterations = Iterations + 1; 
+
+                % variables defined for checking image was captured when it was clear and not blurry 
+                maxAttempts = 4; 
+                attempt = 0; 
+                success = false;
                 
                 while attempt < maxAttempts && ~success
                     try
@@ -730,6 +730,9 @@ classdef functionsContainer
                         % Identifying real QD
                         [~,~,CopyCentroid,~,~,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
                         
+                        % Finds QD across the diagonal of image and collects data to form two main axes
+                        [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
+
                         success = true; % if both succeed, exit loop 
                     catch
                          % If this was the last attempt, just move on
@@ -738,8 +741,7 @@ classdef functionsContainer
                         end
                     end
                 end
-                % Finds QD across the diagonal of image and collects data to form two main axes
-                [allNextPts,allPerpPts] = Finalized_MainAxes(obj,Img,CopyCentroid,radiusQD);
+               
 
                 % Creates grid lines to find intersections
                 [~,~,~,~,b,perp_b,m,perp_m] = Finalized_GridLines(obj,allNextPts,allPerpPts); 
@@ -1588,9 +1590,9 @@ classdef functionsContainer
    
                     % Init wavelength
                     %wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
-                    load("Wavelength.mat","wavelength")
+                    load("C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools\Wavelength.mat","wavelength")
                     wvlength = wavelength';
-                    wvlength = wvlength + 1.344; 
+                    wvlength = wvlength; 
 
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
