@@ -1,26 +1,51 @@
 % ANC300 Getting status testing
 
 % Establishing serial connection with ANC300 
-ANC300 = serialport("COM8",9600);
+%ANC300 = serialport("COM7",9600);
 
 % Setting proper voltages, frequencies, and stepping modes
-fprintf(ANC300,"setm 3 gnd"); 
-fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20"); fprintf(ANC300,"setm 1 stp"); 
-fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20"); fprintf(ANC300,"setm 2 stp");  
+%fprintf(ANC300,"setm 3 gnd"); 
+%fprintf(ANC300,"setv 1 12"); fprintf(ANC300,"setf 1 20"); fprintf(ANC300,"setm 1 stp"); 
+%fprintf(ANC300,"setv 2 12"); fprintf(ANC300,"setf 2 20"); fprintf(ANC300,"setm 2 stp");  
 
 % Number of steps to take
-step_num = 200; 
-serial_comd = sprintf("stepu 1 %d",step_num);
+step_num = 250; 
+serial_comd = sprintf("stepd 1 %d",step_num);
 
-% send serial command to step
-fprintf(ANC300,serial_comd)
+% % send serial command to step
+fprintf(ANC300,serial_comd);
+pause(0.2)
+flush(ANC300) % getting rid of buffered text to prevent filling up 
+
 
 % Waits until movement is safe 
-step_queue_improved(ANC300,1,20)
+axis = 1;
+timeout = 45; 
+break_all = false; 
+for l = 1:200
+        serial_comd_get = sprintf("geto %d",axis);
+        fprintf(ANC300,serial_comd_get); % Sending command to read current voltage output
+        for i = 1:2
+            serial_message = fscanf(ANC300); % reading current voltage output
+            if i == 2
+                serial_message = string(serial_message);
+                serial_messages = strsplit(serial_message);
+                voltage = serial_messages(3); % extract voltage number from list
+                fprintf("%s\n",voltage)
+                if voltage == "0.000000"
+                    fprintf("zero voltage")
+                    break_all = true;
+                    break
+                end
+            end
+        end
+        flush(ANC300) % getting rid of buffered text to prevent filling up 
+if break_all
+    break
+end
+        pause(0.2)
+end
 
-
-
-function step_queue_improved(ANC300,axis,timeout)
 % ANC300 - obj that contains the serial port for the piezo
 % Axis - axis of interest that is in movement (1 = x-axis, 2 = y-axis)
 % timeout - how long the movement could take before timing out should be
@@ -28,7 +53,9 @@ function step_queue_improved(ANC300,axis,timeout)
     flush(ANC300) % flush previous undesirable data 
     voltage = 1; % Initialize voltage to a large number
     threshold = 0; % Set a small threshold for stopping
+
     tic
+    
     while abs(voltage) > threshold  % Keep looping until voltage ≈ 0
         serial_comd = sprintf("geto %d",axis);
         fprintf(ANC300,serial_comd); % Sending command to read current voltage output
@@ -37,7 +64,8 @@ function step_queue_improved(ANC300,axis,timeout)
             if i == 2
                 serial_message = string(serial_message);
                 serial_messages = strsplit(serial_message);
-                voltage = str2double(serial_messages(3)); % extract voltage number from list
+                voltage = str2num(serial_messages(3)); % extract voltage number from list
+                fprintf("Voltage: %.2f V\n",voltage)
             end
         end
         flush(ANC300) % getting rid of buffered text to prevent filling up 
@@ -46,7 +74,6 @@ function step_queue_improved(ANC300,axis,timeout)
         end
         
     end
-    pause(2) % extra pause just in case 
+    pause(1) % extra pause just in case 
     
-    %disp("Voltage reached zero, stopping loop.");
-end
+    disp("Voltage reached zero, stopping loop.");
