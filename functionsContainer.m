@@ -674,6 +674,9 @@ classdef functionsContainer
             
         function[StartingQD,StartingQD_rotated,Rotated_Table_FullQDList_sorted,Table_FullQDList_sorted] = Precision_Locking_Matlab(obj,ANC300,QD_counter,vid_UI,src_UI,accuracy_margin)
             % Takes all previous functions that do the image analysis, pattern completion, and movement and put it to a more organized formating running a constnat while loop looking for the dot we need 
+            
+            % Extract today's date 
+            date_str = Fetch_Date(obj);
 
             % Filtering Settings
             scaling = 0.5;
@@ -684,6 +687,16 @@ classdef functionsContainer
             Salt_pepper_pixel_factor = [20 20];
             Min_circle_area = 200;
             radiusQD = 25; %Pre Aug 9th 2024,30;
+            Debugging_Setting = "on"; 
+            
+
+            if Debugging_Setting == "on"
+                filename = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_Data\\%s_Test\\Debug_File.txt",date_str);
+
+                % Open file in append mode (creates if missing)
+                fileID = fopen(filename, 'a');
+            end
+
 
 
             % Hard coded location of LED Spot
@@ -709,6 +722,7 @@ classdef functionsContainer
             
             Eucli_ShortestDistance = accuracy_margin*2; % Variable set for purposes of initializing while loop 
             Iterations = 0; % initializing iterations 
+            Previous_Post_Img = 0; % initializing img checking variable  
 
             
             while Eucli_ShortestDistance > accuracy_margin
@@ -726,6 +740,12 @@ classdef functionsContainer
 
                         % Snapping Photo 
                         [UI_Position_Img] = UI_Snap_Img(obj,vid_UI,src_UI,"No",QD_counter); 
+                        
+                        % Checking that camera is properly snapping and updating 
+                        if UI_Position_Img == Previous_Post_Img
+                            error("Position Camera is not updating and is reusing same photo")
+                        end
+                        Previous_Post_Img = UI_Position_Img; 
     
                         % Identifying real QD
                         [~,~,CopyCentroid,~,~,Img,mask_scaled,MaskedImage] = Finalized_Analyzed_QDBinaryImg_With_Dots(obj,scaling,radii_big_circle,center_big_circle,sigma_flatfield,Salt_pepper_pixel_factor,Min_circle_area,UI_Position_Img);
@@ -740,6 +760,11 @@ classdef functionsContainer
                             error("Check camera to make sure it's working")
                         end
                     end
+                end
+
+                % DEBUG LINE
+                if Debugging_Setting == "on"
+                    fprintf(fileID,"%d attempts were made to get a proper image\n",attempt);
                 end
                
 
@@ -774,19 +799,23 @@ classdef functionsContainer
                 % Finding direction need to travel to in order to get to QD 
                 [direction] = ClosestPtDirection(obj,ShortestDistance); 
                 %fprintf("%s\n",direction)
+                
+                % checking if the distance being moved is a realistic amount or too much
+                if ShortestDistance(1) > 135 || ShortestDistance(2) > 135
+                    error("Dot trying to be locked on to is too far check error")
+                end
                 % Moving to the startingQD
                 Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
                 pause(0.2)
-                if Iterations > 8
-                    %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
+                if Iterations > 5
                     break
                 end
             end 
             
-            
-            %fprintf("%---------------------------------------\n%d iterations were done\n",Iterations)
-            % fprintf("total iterations took %.2f seconds\n---------------------------------------\n",elaseped_Time)
-            % 
+            % DEBUG LINE
+            if Debugging_Setting == "on"
+                fprintf(fileID,"%d precision iterations were done\n",Iterations);
+            end
 
  
             
@@ -1932,6 +1961,16 @@ classdef functionsContainer
                 latestFolder = fullfile(parentDir, folders(idx(1)).name);
                 
         end
-    
+        
+        % Debugging lines
+        function UpdateText(obj,X_step_num,Y_step_num, time_to_pause,axis)
+
+            switch axis 
+                case "1"
+                fprintf("---------------------------------------\nStepping Complete\n%d step(s) in X direction\nExpected time of Completion: %.3f seconds\n---------------------------------------\n",X_step_num,time_to_pause)
+                case "2"
+                fprintf("---------------------------------------\nStepping Complete\n%d step(s) in Y direction\nExpected time of Completion: %.3f seconds\n---------------------------------------\n",Y_step_num,time_to_pause)    
+            end
+        end
     end
 end
