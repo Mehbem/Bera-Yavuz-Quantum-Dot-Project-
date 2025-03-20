@@ -37,8 +37,10 @@ function step_queue_improved(ANC300,axis,timeout)
 %
 % Example:
 %   step_queue_improved(ANC300, 1, 10) % Monitor x-axis with a 10s timeout.
-    flush(ANC300) % flush previous undesirable data 
-    voltage = ""; %initalize voltage as an empty string for while loop
+
+    flush(ANC300) % Flush previous undesirable data 
+    voltage = ""; % Initalize voltage as an empty string
+    tic % Start timer
     while voltage ~= "0.000000"
             serial_comd_get = sprintf("geto %d",axis);
             fprintf(ANC300,serial_comd_get); % Sending command to read current voltage output
