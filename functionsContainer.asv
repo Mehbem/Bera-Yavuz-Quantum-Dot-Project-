@@ -92,7 +92,7 @@ classdef functionsContainer
                     if Y_Stepping ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
-                    step_queue_improved(obj,ANC300,2,20)
+                    step_queue_improved(obj,ANC300,1,20)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"2")
             end
        
@@ -896,7 +896,7 @@ classdef functionsContainer
             pause(time_to_pause); 
         end
         
-        function step_queue_improved(obj,ANC300,axis_ID,timeout)
+        function step_queue_improved(obj,ANC300,axis,timeout)
         % step_queue_improved - Monitors ANC300 piezo movement until voltage reaches zero.
         %
         % Inputs:
@@ -916,7 +916,7 @@ classdef functionsContainer
             voltage = ""; % Initalize voltage as an empty string
             tic % Start timer
             while voltage ~= "0.000000"
-                    serial_comd_get = sprintf("geto %d",axis_ID);
+                    serial_comd_get = sprintf("geto %d",axis);
                     fprintf(ANC300,serial_comd_get); % Sending command to read current voltage output
                     for i = 1:2
                         serial_message = fscanf(app.ANC300); % reading current voltage output
