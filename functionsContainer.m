@@ -948,12 +948,20 @@ classdef functionsContainer
 
                 % Check if the operation is exceeding the timeout limit
                 if toc > timeout
+                   serial_text_stop = sprintf("stop %d",axis_ID);
+                    serial_text_gnd = sprintf("setm %d gnd",axis_ID);
+                    serial_text_step = sprintf("setm %d stp",axis_ID);
+                    fprintf(ANC300,serial_text_stop); % Stopping piezo movement 
+                    pause(1)
+                    fprintf(ANC300,serial_text_gnd); % gnd respective piezo axis 
+                    pause(1)
+                    fprintf(ANC300,serial_text_step); % step mode respective piezo axis
                     error("Movement is taking longer than expected"); % Terminate with an error
                 end
                 
                 pause(0.2) % Small delay to avoid excessive polling
             end
-            
+            pause(0.5) % extra delay to prevent unwanted commands 
             %disp("Voltage hit zero"); % Indicate successful completion 
         end
         
