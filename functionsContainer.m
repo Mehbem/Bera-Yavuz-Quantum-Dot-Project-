@@ -55,7 +55,7 @@ classdef functionsContainer
 
                 case 'bottomleft'
                     X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
-                    if X_Stepping ~= 0 
+                    if X_Stepping_back ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,1,20)
@@ -75,7 +75,7 @@ classdef functionsContainer
                     step_queue_improved(obj,ANC300,1,20)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
-                    if Y_Stepping ~= 0 
+                    if Y_Stepping_back ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,2,20)
@@ -83,13 +83,13 @@ classdef functionsContainer
 
                 case 'topleft'
                     X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
-                    if X_Stepping ~= 0 
+                    if X_Stepping_back ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,1,20)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
-                    if Y_Stepping ~= 0 
+                    if Y_Stepping_back ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,2,20)
