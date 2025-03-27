@@ -55,7 +55,7 @@ classdef functionsContainer
 
                 case 'bottomleft'
                     X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
-                    if X_Stepping ~= 0 
+                    if X_Stepping_back ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,1,20)
@@ -75,7 +75,7 @@ classdef functionsContainer
                     step_queue_improved(obj,ANC300,1,20)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
-                    if Y_Stepping ~= 0 
+                    if Y_Stepping_back ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,2,20)
@@ -83,13 +83,13 @@ classdef functionsContainer
 
                 case 'topleft'
                     X_Serial_Comd = sprintf("stepd 1 %d",X_Stepping_back);
-                    if X_Stepping ~= 0 
+                    if X_Stepping_back ~= 0 
                     fprintf(ANC300,X_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,1,20)
                     %UpdateText(obj,X_Stepping,Y_Stepping, time_to_pause,"1")
                     Y_Serial_Comd = sprintf("stepd 2 %d",Y_Stepping_back);
-                    if Y_Stepping ~= 0 
+                    if Y_Stepping_back ~= 0 
                     fprintf(ANC300,Y_Serial_Comd);
                     end
                     step_queue_improved(obj,ANC300,2,20)
@@ -882,59 +882,74 @@ classdef functionsContainer
             ClosestPt = AllPossibleQDList(ID,:); 
         end
 
-        function time_to_pause = StepQueue(obj,Step_num,frequency)
-         % Description:
-                % - acts as a queue for stepping to prevent the next line of code from being read before stepping is complete 
-            % Inputs:
-                % Step_num - number of serial steps sent to ANC300
-                % frequency - frquency at which the ANC300 is moving 
-            % Outputs:
-                % No output varialbe as sole purpose of function is to act as a small delay 
-
-            Error_Margin_Factor = 0.3; % in terms of seconds so change as appropriately 
-            time_to_pause = (Step_num/frequency) + Error_Margin_Factor; % calculating the time needed for pausing between lines 
-            pause(time_to_pause); 
-        end
-        
+  
         function step_queue_improved(obj,ANC300,axis_ID,timeout)
-        % step_queue_improved - Monitors ANC300 piezo movement until voltage reaches zero.
-        %
-        % Inputs:
-        %   axis    - Axis to monitor (1 = x, 2 = y).
-        %   timeout - Maximum wait time in seconds before error.
-        %
-        % Description:
-        %   Continuously queries the ANC300 for the output voltage of the specified axis.  
-        %   The loop runs until the voltage reaches "0.000000" V, flushing the buffer  
-        %   after each read to prevent overflow. If movement exceeds the timeout,  
-        %   an error is triggered. A short delay (0.2s) reduces excessive polling.  
-        %
-        % Example:
-        %   step_queue_improved(ANC300, 1, 10) % Monitor x-axis with a 10s timeout.
-        
-            flush(ANC300) % Flush previous undesirable data 
-            voltage = ""; % Initalize voltage as an empty string
-            tic % Start timer
-            while voltage ~= "0.000000"
-                    serial_comd_get = sprintf("geto %d",axis_ID);
-                    fprintf(ANC300,serial_comd_get); % Sending command to read current voltage output
-                    for i = 1:2
-                        serial_message = fscanf(app.ANC300); % reading current voltage output
-                        if i == 2
-                            serial_message = string(serial_message);
-                            serial_messages = strsplit(serial_message);
-                            voltage = serial_messages(3); % extract voltage number from list
-                        end
-                    end
-                    flush(ANC300) % getting rid of buffered text to prevent filling up
-        
-                    if toc > timeout % checking if stepping is going on longer then expected
-                     % Display error message
-                    error("Movement is taking longer then expected");
-                    end
-                    pause(0.2)
+        % STEP_QUEUE_IMPROVED Monitors and waits for voltage to reach zero
+            %
+            % This function continuously checks the voltage output of a specified axis
+            % on the ANC300 Piezo controller. It sends a command to retrieve the 
+            % current voltage and stops execution once the voltage reaches zero or 
+            % the timeout limit is exceeded.
+            %
+            % PARAMETERS:
+            % ANC300   - Serial communication object for the ANC300 controller.
+            % axis_ID  - Integer specifying the axis to monitor.
+            % timeout  - Maximum time (in seconds) to wait before triggering an error.
+            %
+            % The function flushes the serial buffer before and after each command 
+            % to prevent buffer overflow and ensure accurate readings.
+
+            flush(ANC300) % Clear the serial buffer to remove old data
+            pause(0.1) % Short delay to allow flushing to complete
+            
+            voltage = 2; % Initialize voltage with a nonzero value to enter the loop
+            tic % Start the timer to track timeout duration
+            
+            while voltage ~= 0 % Keep looping until the voltage reaches zero
+                
+                % Construct the command string to request the voltage of the specified axis
+                serial_comd_get = sprintf("geto %d", axis_ID);
+                
+                % Send the command to the ANC300 device
+                fprintf(ANC300, serial_comd_get); 
+                pause(0.1) % Short delay to allow the device to respond
+                
+                % Read all available bytes from the serial buffer
+                data = read(ANC300, ANC300.NumBytesAvailable, "uint8"); 
+                
+                % Convert raw byte data into a readable string
+                data_text = char(data);
+                
+                % Extract the numerical voltage value from the response using regex
+                matches = regexp(data_text, 'voltage\s*=\s*([\d\.\-eE]+)\s*V', 'tokens');
+                
+                % If a valid voltage value is found, convert it to a numeric format
+                if ~isempty(matches)
+                    voltage = str2double(matches{1}{1});
+                    %disp(voltage); % Display the extracted voltage
+                else
+                    disp("Voltage value not found."); % Debugging message if parsing fails
+                end
+
+                flush(ANC300) % Clear the serial buffer to prevent old data accumulation
+
+                % Check if the operation is exceeding the timeout limit
+                if toc > timeout
+                   serial_text_stop = sprintf("stop %d",axis_ID);
+                    serial_text_gnd = sprintf("setm %d gnd",axis_ID);
+                    serial_text_step = sprintf("setm %d stp",axis_ID);
+                    fprintf(ANC300,serial_text_stop); % Stopping piezo movement 
+                    pause(1)
+                    fprintf(ANC300,serial_text_gnd); % gnd respective piezo axis 
+                    pause(1)
+                    fprintf(ANC300,serial_text_step); % step mode respective piezo axis
+                    error("Movement is taking longer than expected"); % Terminate with an error
+                end
+                
+                pause(0.2) % Small delay to avoid excessive polling
             end
-            pause(0.5) %extra 0.5 second delay for safe keeping 
+            pause(0.1) % extra delay to prevent unwanted commands 
+            %disp("Voltage hit zero"); % Indicate successful completion 
         end
         
         function [direction] = ClosestPtDirection(obj,ShortestDistance)
@@ -1157,7 +1172,7 @@ classdef functionsContainer
             date_today = sprintf("_%d_%d_%d",y,m,d);
             HistoryTextFileName = sprintf("QD_History%s.txt",date_today);
     
- 
+
             switch Read_Write
  
                 case "Write"
@@ -1263,11 +1278,11 @@ classdef functionsContainer
 
 
             if Device == "LAB"
-            filenameLAB = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
+            filename_QD_History_Today = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
             elseif Device == "HOME_PC"
-            filenameLAB = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName); 
+            filename_QD_History_Today = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName); 
             elseif Device == "MAC"
-            filenameLAB = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/QD_History.txt"; 
+            filename_QD_History_Today = "/Users/bera_yavuz/Desktop/GitHub ANC300 Project/QD_History.txt"; 
             else
                 fprintf("invalid Device name try again")
             end
@@ -1282,36 +1297,36 @@ classdef functionsContainer
             switch Action 
 
                 case "Initialize"
-                    if exist(filenameLAB, 'file')
+                    if exist(filename_QD_History_Today, 'file')
                         fprintf('File already exists.');
                         return
                     else
-                        fileID_QD = fopen(filenameLAB, 'w+'); % Create the file
-                        if fileID_QD == -1
+                        file_QD_History_Today = fopen(filename_QD_History_Today, 'w+'); % Create the file
+                        if file_QD_History_Today == -1
                             error('Failed to create the file.');
                         end
-                        fclose(fileID_QD);
+                        fclose(file_QD_History_Today);
                     end
-                    fileID_QD = fopen(filenameLAB,'rt'); % opening file in order to read it line by line 
+                    file_QD_History_Today = fopen(filename_QD_History_Today,'rt'); % opening file in order to read it line by line 
       
                     % Read the entire file into a single string
-                    fileContent = fread(fileID_QD, '*char')';
+                    fileContent_QD_History_Today = fread(file_QD_History_Today, '*char')';
                     
-                    if isempty(fileContent)
-                        fclose(fileID_QD); 
+                    if isempty(fileContent_QD_History_Today)
+                        fclose(file_QD_History_Today); 
                         read_QD_History_log = Last_Log_Identification(obj,"Read","LAB"); 
-                        filename_QD_History = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
+                        filename_QD_History_Previous = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
                         %filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
-                        fileID_Log = fopen(filename_QD_History, 'rt'); 
-                        if fileID_Log == -1
+                        file_QD_History_Previous = fopen(filename_QD_History_Previous, 'rt'); 
+                        if file_QD_History_Previous == -1
                             error('Failed to open the file.');
                         end
                         
                         % Read the entire file into a single string
-                        fileContent = fread(fileID_Log, '*char')';
+                        fileContent_QD_History_Previous = fread(file_QD_History_Previous, '*char')';
                         
                         % Split the content into lines
-                        lines = strsplit(fileContent, newline);
+                        lines = strsplit(fileContent_QD_History_Previous, newline);
                         
                         % Initialize variables to store the last three non-empty lines
                         lastline = '';
@@ -1334,24 +1349,28 @@ classdef functionsContainer
                             end
                         end
                         QD_position_initial = lastline; 
-                        fclose(fileID_Log); 
+                        fclose(file_QD_History_Previous); 
     
                         % opening back the newly created file to add that line
-                        fileID = fopen(filenameLAB,'a+');
-                        if fileID == -1
+                        file_QD_History_Today = fopen(filename_QD_History_Today,'a+');
+                        if file_QD_History_Today == -1
                             error('Failed to open the file.');
                         end
                          % Write the timestamp and information to the file
-                        fprintf(fileID, '%s\n================================================\nTaken from last QD text file\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr,Raster_DirectionQD,QD_position_initial);
-                        fclose(fileID); 
+                        fprintf(file_QD_History_Today, '%s\n================================================\nTaken from last QD text file\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr,Raster_DirectionQD,QD_position_initial);
+                        fclose(file_QD_History_Today); 
                         Last_Log_Identification(obj,"Write","LAB"); 
                     end
-
+                    % Ensure the file is closed
+                    if file_QD_History_Today ~= -1 && ferror(file_QD_History_Today) == 0 % Check if fopen was successful
+                        fclose(file_QD_History_Today); % Close the file
+                    end
+                    
                 case "Write" 
                 
-                fileID = fopen(filenameLAB, 'a+');
+                file_QD_History_Today = fopen(filename_QD_History_Today, 'a+');
                 % Check if the file opened successfully
-                if fileID == -1
+                if file_QD_History_Today == -1
                     error('Failed to open the file.');
                 end
     
@@ -1364,25 +1383,25 @@ classdef functionsContainer
                     error("Invalid Input: Please Input Auto or Manual")
                 end 
                 % Write the timestamp and information to the file
-                fprintf(fileID, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
-                fclose(fileID); 
+                fprintf(file_QD_History_Today, '%s\n================================================\n%s\nRaster Scan Direction: %s\nCurrent position of QD:\n%s\n\n\n', currentTimeStr, InputSourceText,direction_QD,QD_position);
+                fclose(file_QD_History_Today); 
                 
                 case "Read"
-                fileID = fopen(filenameLAB, 'rt');
-                if fileID == -1
+                file_QD_History_Today = fopen(filename_QD_History_Today, 'rt');
+                if file_QD_History_Today == -1
                     error('Failed to open the file.');
                 end
                 
                 % Read the entire file into a single string
-                fileContent = fread(fileID, '*char')';
+                fileContent_QD_History_Today = fread(file_QD_History_Today, '*char')';
 
-                if isempty(fileContent)
+                if isempty(fileContent_QD_History_Today)
                     fprintf("there is nothing in the file, please fix issue")
                     return 
                 end
                 
                 % Split the content into lines
-                lines = strsplit(fileContent, newline);
+                lines = strsplit(fileContent_QD_History_Today, newline);
                 
                 % Initialize variables to store the last three non-empty lines
                 lastLine = '';
@@ -1412,7 +1431,7 @@ classdef functionsContainer
                 
                 % Convert the last and third-to-last lines to numbers
                 readQD_position = struct('lastLine', str2num(lastLine), 'thirdLastLine', Raster_DirectionQD); 
-                fclose(fileID); 
+                fclose(file_QD_History_Today); 
             end
             if Action == "Write"
                 readQD_position = ''; 
@@ -1528,7 +1547,7 @@ classdef functionsContainer
                 ASI_name = deviceName; 
                 camInfo.DeviceInfo(i).DefaultFormat = 'RGB8_6248x4176';%'RGB8_1280x960'; 
                 fprintf("found ASI (spectrometer camera)\n")
-            elseif contains(deviceName,"UI") %  checks to see if the detected device is the ASI camera
+            elseif contains(deviceName,"UI") %  checks to see if the detected device is the Ueye pos camera
                 UI_Device_ID = i;
                 UI_name = deviceName; 
                 fprintf("found UI 148x Camera (nanowire camera)\n")
@@ -1538,7 +1557,7 @@ classdef functionsContainer
         end
         
         % establishing connection and parameters of ASI Device 
-        vid_ASI = videoinput(adaptor, ASI_name,camInfo.DeviceInfo(ASI_Device_ID).DefaultFormat); % function can take a third input to specify formatting (ASK Sreesh) 
+        vid_ASI = videoinput(adaptor, ASI_name,camInfo.DeviceInfo(ASI_Device_ID).DefaultFormat); % function can take a third input to specify formatting 
         src_ASI = getselectedsource(vid_ASI);
         %all_props_ASI = propinfo(vid_ASI); shows all settings user can change 
         
@@ -1603,6 +1622,7 @@ classdef functionsContainer
                         pause(eps)
                     end
                     background_img = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
+                    flushdata(vid_ASI,'all')  % clean potential image memory
 
                     % get average of background and store it 
                     background_img = mean(background_img, 4);
@@ -1625,6 +1645,7 @@ classdef functionsContainer
                         pause(eps)
                     end
                     [Emission_Reading_Img] = getdata(vid_ASI,vid_ASI.FramesPerTrigger);
+                    flushdata(vid_ASI,'all') % clean potential image memory
 
                     Emission_Reading_Img = mean(Emission_Reading_Img, 4);
                     if size(Emission_Reading_Img,3) == 3 % checks if image is rgb
@@ -1776,8 +1797,9 @@ classdef functionsContainer
                     fprintf(file,'Captured time: %s\n', datestr(now,'HH:MM:SS mmm-dd-yyyy'));
                     % Print the data
                     fprintf(file,'-----Data-----\n');
-                     fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Count Average');
+                    fprintf(file,'%s \t %s\n', 'Wavelen. (nm)','Count Average');
                     fprintf(file,'%.4f \t %u\n',data_matrix);
+                    fclose(file);
 
             end
         end

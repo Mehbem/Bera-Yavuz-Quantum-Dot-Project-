@@ -1,0 +1,32 @@
+% Define the text file name
+filename = 'C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\QD_Coordinates.txt';
+
+% Read the file content
+fileContent = readlines(filename);
+
+% Initialize an empty matrix to store the coordinates
+coordinates = [];
+
+% Loop through each line of the file content
+for i = 1:length(fileContent)
+    % Use regex to extract the numbers inside the brackets
+    match = regexp(fileContent{i}, '\[(\d+)\s+(\d+)\]', 'tokens');
+    
+    % Check if a valid match is found
+    if ~isempty(match)
+        % Convert the match to numeric values and store them as a row in the matrix
+        coords = str2double(match{1});
+        coordinates = [coordinates; coords];
+    end
+end
+
+% Sort the coordinates by the second column (column 2)
+sorted_coordinates = sortrows(coordinates, 2);
+
+% Display the sorted coordinates
+disp('Sorted QD Coordinates:');
+disp(sorted_coordinates);
+
+% If you want to save the sorted coordinates back to a file
+output_filename = 'Sorted_QD_Coordinates.txt';
+writematrix(sorted_coordinates, output_filename, 'Delimiter', '\t');
