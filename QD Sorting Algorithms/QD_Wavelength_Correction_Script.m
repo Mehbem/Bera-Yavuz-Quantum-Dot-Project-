@@ -1,8 +1,11 @@
 % Wavelength Correction for Multiple Subfolders
 % Bera Yavuz 
 
+%Define data folder (containing all QD to be tested)
+folder_with_QD_tested = "C:\Users\yavub\OneDrive - University of Waterloo\QD Data\Corrected_Wavelengths_Raster"; % (Home pc) 
+
 % Main folder of interest (user needs to update)
-main_folder = ""; % User inputs full path
+main_folder = folder_with_QD_tested; % User inputs full path
 
 % Get all text files from main folder and subfolders
 QD_txt_files = dir(fullfile(main_folder, '**', '*.txt'));

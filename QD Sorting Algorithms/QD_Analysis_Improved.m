@@ -5,17 +5,20 @@ warning('off');
 
 
 % Define constraints
-Cs_wvl_min = 891.6;
-Cs_wvl_max = 898.2;
+Cs_wvl_min = 894.3;
+Cs_wvl_max = 895.3;
 
 % Define data folder (containing all QD to be tested)
-folder_with_QD_tested = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\QD_To_Analyze_A";
+%folder_with_QD_tested = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\QD_To_Analyze_A"; (Lab PC)
+folder_with_QD_tested = "C:\Users\yavub\OneDrive - University of Waterloo\QD Data\Corrected_Wavelengths_Raster"; % (Home pc) 
 
 % Define the base directory
-pathway_with_QD_acquired = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\"; 
+%pathway_with_QD_acquired = "C:\Users\Quantum Dot\Desktop\Bera Yavuz -ANC300 Movement and Images\QD_Data\"; (Lab pc)
+pathway_with_QD_acquired = "C:\Users\yavub\OneDrive - University of Waterloo\QD Data\QD_Analysis_Results\QD_CS_Range_1000_Count_Up"; %(Home PC)
+
 
 % Get today's date in YYYY-MM-DD format
-today_date = datestr(now, 'yyyy-mm-dd');
+today_date = datestr(now, 'mm_dd_yyyy');
 
 % Create the filename with the date
 textfile_name = sprintf("QD_Coordinates_%s.txt", today_date);
@@ -31,7 +34,7 @@ matching_qds = [];
 % Process each .txt file
 for i = 1:length(files)
     filename = fullfile(folder_with_QD_tested, files(i).name);
-    fprintf("Processing: %s\n", files(i).name);
+    %fprintf("Processing: %s\n", files(i).name);
     
     % Extract [num num] from the filename
     qd_match = regexp(files(i).name, '\[(\d+)\s+(\d+)\]', 'tokens');
@@ -51,7 +54,8 @@ for i = 1:length(files)
 
     % Find peaks
     spectrum_avg = mean(counts_array);
-    spectrum_cutoff = 300;  % Adjust as needed
+    %spectrum_avg = 0;
+    spectrum_cutoff = 1000;  % Adjust as needed
     [pks, locs] = findpeaks(counts_array, 'MinPeakHeight', spectrum_avg + spectrum_cutoff, 'MinPeakDistance', 75);
 
     % Check if any peaks fall in Cs transition range
@@ -59,6 +63,9 @@ for i = 1:length(files)
         fprintf("QD Found in %s at %.3f nm, Coordinates: %s\n", files(i).name, wvlngth_array(locs(1)), qd_coords);
         matching_qds = [matching_qds; qd_coords];  % Append to list
     end
+
+    % Progression message
+    fprintf("Completed Reading: %d/%d\n",i,length(files))
 end
 
 % Output results to a text file
@@ -68,7 +75,7 @@ for j = 1:length(matching_qds)
 end
 fclose(fid);
 
-fprintf("\nQDs matching Cs D1 transition range saved to %s.\n", output_filename);
+fprintf("\nQDs matching Cs D1 transition range saved to %s.\n", full_file_path);
 disp("*********************************************************************************")
 fprintf("Total matches: %d\n", length(matching_qds));
 disp("*********************************************************************************")
