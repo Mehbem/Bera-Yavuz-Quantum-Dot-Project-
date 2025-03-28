@@ -4,21 +4,33 @@ clc; clear; close all;
 warning('off');
 
 
-% Define constants
+% Define constraints
 Cs_wvl_min = 891.6;
 Cs_wvl_max = 898.2;
 
-% Define data folder
-folder_name = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\QD_To_Analyze_A";
-folder_name_analysis = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\"; 
-files = dir(fullfile(folder_name, "*.txt"));
+% Define data folder (containing all QD to be tested)
+folder_with_QD_tested = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\QD_To_Analyze_A";
+
+% Define the base directory
+pathway_with_QD_acquired = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\"; 
+
+% Get today's date in YYYY-MM-DD format
+today_date = datestr(now, 'yyyy-mm-dd');
+
+% Create the filename with the date
+textfile_name = sprintf("QD_Coordinates_%s.txt", today_date);
+
+% Full file path
+full_file_path = fullfile(pathway_with_QD_acquired, textfile_name);
+
+files = dir(fullfile(folder_with_QD_tested, "*.txt"));
 
 % Initialize array for matching QDs
 matching_qds = [];
 
 % Process each .txt file
 for i = 1:length(files)
-    filename = fullfile(folder_name, files(i).name);
+    filename = fullfile(folder_with_QD_tested, files(i).name);
     fprintf("Processing: %s\n", files(i).name);
     
     % Extract [num num] from the filename
@@ -50,12 +62,14 @@ for i = 1:length(files)
 end
 
 % Output results to a text file
-output_filename = fullfile(folder_name_analysis, "QD_Coordinates.txt");
-fid = fopen(output_filename, 'w');
+fid = fopen(full_file_path, 'w');
 for j = 1:length(matching_qds)
     fprintf(fid, "%s\n", matching_qds(j));
 end
 fclose(fid);
 
 fprintf("\nQDs matching Cs D1 transition range saved to %s.\n", output_filename);
+disp("*********************************************************************************")
 fprintf("Total matches: %d\n", length(matching_qds));
+disp("*********************************************************************************")
+
