@@ -679,7 +679,7 @@ classdef functionsContainer
             Salt_pepper_pixel_factor = [20 20];
             Min_circle_area = 200;
             radiusQD = 25; %Pre Aug 9th 2024,30;
-            Debugging_Setting = "on"; 
+            Debugging_Setting = "off"; 
             
 
             if Debugging_Setting == "on"
@@ -709,6 +709,7 @@ classdef functionsContainer
             x_factor = Read_XY_factor.X_factor; 
             y_factor = Read_XY_factor.Y_factor; 
             factors = load("Spectrometer_Settings.mat","X_Factor_Back","Y_Factor_Back");
+            movement_factor = 3/4; 
             %----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             
             
@@ -797,7 +798,7 @@ classdef functionsContainer
                     error("Dot trying to be locked on to is too far check error")
                 end
                 % Moving to the startingQD
-                Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*4/5,y_factor*4/5,factors.X_Factor_Back*4/5,factors.Y_Factor_Back*4/5)
+                Dual_ANC300_Movement(obj,ShortestDistance(1),ShortestDistance(2),direction,ANC300,Frequency,x_factor*movement_factor,y_factor*movement_factor,factors.X_Factor_Back*movement_factor,factors.Y_Factor_Back*movement_factor)
                 if Iterations > 5
                     break
                 end
