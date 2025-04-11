@@ -4,19 +4,26 @@
     % Main folder of interest (user needs to update)
 %main_folder = ""; % User inputs full path (LAB pc)
 %main_folder = "/Users/bera_yavuz/Library/CloudStorage/OneDrive-UniversityofWaterloo/QD Data/Corrected_Wavelengths_Raster"; % User inputs full path (Macbook) 
-main_folder = "C:\Users\yavub\OneDrive - University of Waterloo\QD Data\Corrected_Wavelengths_Raster"; 
+main_folder = "C:\Users\yavub\OneDrive\Desktop\QD Analysis\QD_894.600-894.700_nm_Range_1000_Count_Up\text_files"; 
 
 % Out folder with all the plots
 %QD_plot_directory = "/Users/bera_yavuz/Library/CloudStorage/OneDrive-UniversityofWaterloo/QD Data/Corrected_Wavelengths_Plots";
-QD_plot_directory = "C:\Users\yavub\OneDrive - University of Waterloo\QD Data\Corrected_Wavelengths_Plots"; 
+QD_plot_directory = "C:\Users\yavub\OneDrive\Desktop\QD Analysis\QD_894.600-894.700_nm_Range_1000_Count_Up\Corrected_Wavelengths_Plots"; 
 
 % Get all text files from main folder and subfolders
 QD_txt_files = dir(fullfile(main_folder, '**', '*.txt'));
 counter = 0; % keep track of how many textfiles are done so far
-for QD_ID = 2398:numel(QD_txt_files)
+
+% Check if folder exists; if not, create it
+if ~exist(QD_plot_directory, 'dir')
+    mkdir(QD_plot_directory);  
+end
+
+for QD_ID = 1:numel(QD_txt_files)
     counter = counter + 1;
     % Get full file path
     file_path = fullfile(QD_txt_files(QD_ID).folder, QD_txt_files(QD_ID).name);
+    [~, name_only, ~] = fileparts(file_path);
 
     % QD number extraction
     QD_str = regexp(QD_txt_files(QD_ID).name, '\[(\d+)\s+(\d+)\]', 'tokens');
@@ -80,7 +87,7 @@ for QD_ID = 2398:numel(QD_txt_files)
     % plot image
     plot_img = gcf; 
     
-    final_plot_full_path = fullfile(QD_plot_directory,QD_txt_files(QD_ID).name); 
+    final_plot_full_path = fullfile(QD_plot_directory,name_only); 
     plot_filename = strcat(final_plot_full_path, '_wvl_graph.png'); 
     saveas(gcf, plot_filename);
     fprintf("Completed: %d/%d\n", counter,numel(QD_txt_files));
