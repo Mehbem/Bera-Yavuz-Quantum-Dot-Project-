@@ -1362,10 +1362,7 @@ classdef functionsContainer
                         fclose(file_QD_History_Today); 
                         Last_Log_Identification(obj,"Write","LAB"); 
                     end
-                    % Ensure the file is closed
-                    if file_QD_History_Today ~= -1 && ferror(file_QD_History_Today) == 0 % Check if fopen was successful
-                        fclose(file_QD_History_Today); % Close the file
-                    end
+                
                     
                 case "Write" 
                 
