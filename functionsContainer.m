@@ -15,7 +15,7 @@ classdef functionsContainer
             % Transformation factor from pixel to step
            
             X_Stepping = abs(Pixel_number_X  * x_factor); % pixels * (steps/pixels)
-            Y_Stepping = abs(Pixel_number_Y * y_factor); % pixels * (steps/pixels)
+            Y_Stepping = abs(Pixel_number_Y * y_factor);  % pixels * (steps/pixels)
 
             % Transformation factor from pixel to step (reverse movement) 
             X_Stepping_back = abs(Pixel_number_X * x_factor_back); % pixels * (steps/pixels)
@@ -29,8 +29,8 @@ classdef functionsContainer
 
             % print statements for number of steps (uncomment for debugging
             % purposes) 
-            %fprintf("X_step: %d\n",X_Stepping)
-            %fprintf("Y_step: %d\n",Y_Stepping)
+            % fprintf("X_step: %d\n",X_Stepping)
+            % fprintf("Y_step: %d\n",Y_Stepping)
 
             if X_Stepping >= 200 | Y_Stepping >= 200 
                 error("LARGE STEPPING ERROR, Call Van Damn")
@@ -683,7 +683,7 @@ classdef functionsContainer
             
 
             if Debugging_Setting == "on"
-                filename = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_Data\\%s_Test\\Debug_File.txt",date_str);
+                filename = sprintf("C:\\Users\\Quantum Dot\\Desktop\\NWQD_Operation\\QD_Data\\%s_Test\\Debug_File.txt",date_str);
 
                 % Open file in append mode (creates if missing)
                 fileID = fopen(filename, 'a');
@@ -990,7 +990,7 @@ classdef functionsContainer
             
             % Define the filename 
             if Device == "LAB"
-            filename = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\LED_Find_Images\LED_Coordinate_History.txt";
+            filename = "C:\Users\Quantum Dot\Desktop\NWQD_Operation\LED_Find_Images\LED_Coordinate_History.txt";
             elseif Device == "HOME_PC"
             filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\LED_Coordinate_History.txt"; 
             else
@@ -1068,7 +1068,7 @@ classdef functionsContainer
             
             % Define the filename
             if Device == "LAB" 
-            filename = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\XY_Factor_Images\XY_Factor_History.txt";
+            filename = "C:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_History_Logs\XY_Factor_History.txt";
             elseif Device == "HOME_PC"
             filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\XY_Factor_History.txt"; 
             else
@@ -1154,7 +1154,7 @@ classdef functionsContainer
             
             % Define the filename
             if Device == "LAB"
-            filename =  "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_History_Logs\QD_History_Log.txt";
+            filename =  "C:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_History_Logs\QD_History_Log.txt";
             elseif Device == "MAC"
             filename = "C:\Users\yavub\OneDrive\Desktop\ANC300 Project GitHub\AttoCube-Project-Stuff\QD_History_log.txt";
             elseif Device == "HOME_PC"
@@ -1279,7 +1279,7 @@ classdef functionsContainer
 
 
             if Device == "LAB"
-            filename_QD_History_Today = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
+            filename_QD_History_Today = sprintf("C:\\Users\\Quantum Dot\\Desktop\\NWQD_Operation\\QD_History_Logs\\QD_History_Text_Files\\%s",HistoryTextFileName); 
             elseif Device == "HOME_PC"
             filename_QD_History_Today = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",HistoryTextFileName); 
             elseif Device == "MAC"
@@ -1316,7 +1316,7 @@ classdef functionsContainer
                     if isempty(fileContent_QD_History_Today)
                         fclose(file_QD_History_Today); 
                         read_QD_History_log = Last_Log_Identification(obj,"Read","LAB"); 
-                        filename_QD_History_Previous = sprintf("C:\\Users\\Quantum Dot\\Desktop\\Bera Yavuz - ANC300 Movement and Images\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
+                        filename_QD_History_Previous = sprintf("C:\\Users\\Quantum Dot\\Desktop\\NWQD_Operation\\QD_History_Logs\\QD_History_Text_Files\\%s",read_QD_History_log); 
                         %filename_QD_History = sprintf("C:\\Users\\yavub\\OneDrive\\Desktop\\QD_History_logs\\All_QD_History_Files\\%s",read_QD_History_log); 
                         file_QD_History_Previous = fopen(filename_QD_History_Previous, 'rt'); 
                         if file_QD_History_Previous == -1
@@ -1455,8 +1455,8 @@ classdef functionsContainer
 
                 case "LAB"
                     directoryPath_Funcs = "C:\Users\Quantum Dot\Desktop\Bera_Yavuz_GitHub\AttoCube-Project-Stuff";
-                    directoryPath_LED = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\LED_Find_Images"; 
-                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools";
+                    directoryPath_LED = "C:\Users\Quantum Dot\Desktop\NWQD_Operation\LED_Find_Images"; 
+                    directoryPath_Scripts = "C:\Users\Quantum Dot\Desktop\NWQD_Operation\Scripts_&_Debugging_Tools";
                     addpath(directoryPath_Funcs,directoryPath_LED,directoryPath_Scripts);
               
                 case "HOME_PC"
@@ -1578,11 +1578,11 @@ classdef functionsContainer
         
         end
         
-        function [Emission_Reading_Img,pks,plot_filename,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_Gratting,QD_ID,Process)
+        function [Emission_Reading_Img,pks,plot_filename,background_img] = ASI_Snap_Img(obj,vid_ASI,src_ASI,ImgType,SaveImg,Spectrometer_grating,QD_ID,Process)
             % ASI_Snap_Img - Captures and processes an image from the ASI Spectrometer.
             %
             % Syntax:
-            %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_Gratting, QD_ID)
+            %   [Emission_Reading_Img] = ASI_Snap_Img(obj, vid_ASI, src_ASI, ImgType, SaveImg, Spectrometer_grating, QD_ID)
             %
             % Description:
             %   This function captures an image from the ASI spectrometer system, processes the image based on the 
@@ -1596,7 +1596,7 @@ classdef functionsContainer
             %   src_ASI              - Source properties of the ASI camera
             %   ImgType              - Type of image to capture: "Background" or "Spectrometer"
             %   SaveImg              - Boolean flag to save the captured image (not explicitly used in the function)
-            %   Spectrometer_Gratting - Spectrometer grating setting (e.g., 1800, 1200, 150)
+            %   Spectrometer_grating - Spectrometer grating setting (e.g., 1800, 1200, 150)
             %   QD_ID                - Identifier for the Quantum Dot sample being analyzed
             %   FSS                     - Specifies its for fine struct splitting (FSS degrees #)
             %
@@ -1609,7 +1609,7 @@ classdef functionsContainer
             date_test =  date + "_Test"; 
             
             % Main pathway for where the background photos end up 
-            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Spectrometer_ASI"; 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data\" + date_test +"\Spectrometer_ASI"; 
 
             switch ImgType
                 case "Background"
@@ -1670,25 +1670,32 @@ classdef functionsContainer
    
                     % Init wavelength
                     %wvlength = linspace(wvlngth_start, wvlngth_end, size(Emission_Reading_Img, 2));
-                    load("C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts_&_Debugging_Tools\Wavelength.mat","wavelength")
+                    load("C:\Users\Quantum Dot\Desktop\NWQD_Operation\Scripts_&_Debugging_Tools\Wavelength.mat","wavelength")
                     wvlength = wavelength';
-                    wvlength = wvlength; 
-
+                    
                     % Define the directory path for saving the plot
                     ASI_plots_directory = strcat(date_test, '\Spectrometer_Plots');
-                    Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting",QD_ID,Spectrometer_Gratting);
-                    qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
+                    Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating",QD_ID,Spectrometer_grating);
+                    qd_data_ASI_plots_directory = fullfile("c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data", ASI_plots_directory,Quantum_Dot_Named_File);
                     
                     % Checking if FSS is involved 
                     if contains(Process,"FSS")
                         FSS_Text = strsplit(Process); 
                         FSS_Angle = FSS_Text{2}; 
                         latestFolder = find_latestFolder(obj,QD_ID,"FSS");
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees",QD_ID,Spectrometer_Gratting,FSS_Angle);
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_FSS_%s_degrees",QD_ID,Spectrometer_grating,FSS_Angle);
                         qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
                     elseif contains(Process,"Emission")
+                        Emission_Text = strsplit(Process); 
+                        Emission_Power = Emission_Text{2}; 
                         latestFolder = find_latestFolder(obj,QD_ID,"Emission");
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_Emission.txt",QD_ID,Spectrometer_Gratting);
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_Emission_%s_muW.txt",QD_ID,Spectrometer_grating, Emission_Power);
+                        qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
+                    elseif contains(Process,"PowerScan")
+                        PowerScan_Text = strsplit(Process); 
+                        Power_Excitation = PowerScan_Text{2}; 
+                        latestFolder = find_latestFolder(obj,QD_ID,"Emission");
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_Emission_%s_muW.txt", QD_ID(1), QD_ID(2),Spectrometer_grating, Power_Excitation);
                         qd_data_ASI_plots_directory = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
 
@@ -1705,7 +1712,7 @@ classdef functionsContainer
                             end
                             RawImg_Fullpathway = fullfile(latestFolder,"Raw_Imgs",strcat(Quantum_Dot_Named_File,".png"));
                         else
-                            specific_filename_img = sprintf("[%d %d]_%dmm_gratting_ASI_RawImg.png",QD_ID,Spectrometer_Gratting);
+                            specific_filename_img = sprintf("[%d %d]_%dmm_grating_ASI_RawImg.png",QD_ID,Spectrometer_grating);
                             RawImg_Fullpathway = fullfile(pathway_main,specific_filename_img);
                         end
                         Emission_Reading_Img = uint8(Emission_Reading_Img);
@@ -1771,15 +1778,18 @@ classdef functionsContainer
 
                     % text file creation 
                     data_matrix = [wvlength;spectrum_sum];
-                    specific_filename = sprintf("\\QD_Text_File_Data\\[%d %d]_%dmm_gratting.txt",QD_ID,Spectrometer_Gratting); 
-                    text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test,specific_filename);
+                    specific_filename = sprintf("\\QD_Text_File_Data\\[%d %d]_%dmm_grating.txt",QD_ID,Spectrometer_grating); 
+                    text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data\" + date_test,specific_filename);
 
                     % Checking if FSS is involved 
                     if contains(Process,"FSS")                      
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_FSS_%s_degrees.txt",QD_ID,Spectrometer_Gratting,FSS_Angle);
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_FSS_%s_degrees.txt",QD_ID,Spectrometer_grating,FSS_Angle);
                         text_file_pathway = fullfile(latestFolder,Quantum_Dot_Named_File);
                     elseif contains(Process,"Emission")
-                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_gratting_Emission.txt",QD_ID,Spectrometer_Gratting);
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_Emission.txt",QD_ID,Spectrometer_grating);
+                        text_file_pathway = fullfile(latestFolder,Quantum_Dot_Named_File);
+                    elseif contains(Process,"PowerScan")
+                        Quantum_Dot_Named_File = sprintf("[%d %d]_%dmm_grating_Emission_%s_muW.txt", QD_ID(1), QD_ID(2),Spectrometer_grating, Power_Excitation);
                         text_file_pathway = fullfile(latestFolder,Quantum_Dot_Named_File);
                     end
 
@@ -1788,7 +1798,7 @@ classdef functionsContainer
                     
                     % Print the settings
                     fprintf(file,'-----Settings-----\n');
-                    fprintf(file,'Spectrometer Grating: %dmm \n',Spectrometer_Gratting);
+                    fprintf(file,'Spectrometer Grating: %dmm \n',Spectrometer_grating);
                     fprintf(file,'Exposure: \t %.4E seconds \n', src_ASI.Exposure);
                     fprintf(file,'Gain: \t %.1f \n',src_ASI.Gain);
                     fprintf(file,'Resolution: \t %.0f x %.0f \n', width,height);
@@ -1835,7 +1845,7 @@ classdef functionsContainer
             date_test =  date + "_Test"; 
             
             % Defining the pathway for where the UI Imgs end up 
-            pathway_main = "c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data\" + date_test +"\Position_uEYE"; 
+            pathway_main = "c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data\" + date_test +"\Position_uEYE"; 
             
 
             % Capturing a snap of the UI camera
@@ -1911,7 +1921,7 @@ classdef functionsContainer
     
         end
 
-        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_Gratting,SaveRawImg,total_ange)
+        function Current_angle = FSS_Process(obj,ell_motor,QD_ID,vid_ASI,src_ASI,Spectrometer_grating,SaveRawImg,total_ange)
            % Defining the movement serial code for the rotation back to
             % default zero
             angle_hxd = dec2hex(floor(mod(0,360)*39822/100), 8);
@@ -1942,7 +1952,7 @@ classdef functionsContainer
             
             % taking a snap at every respective angle 
             file_name = sprintf('FSS %d',angle(rot_count)); 
-            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer",SaveRawImg,Spectrometer_Gratting,QD_ID,file_name);            
+            ASI_Snap_Img(obj,vid_ASI,src_ASI,"Spectrometer",SaveRawImg,Spectrometer_grating,QD_ID,file_name);            
             end
 
     
@@ -1962,7 +1972,7 @@ classdef functionsContainer
                 ASI_plots_directory = strcat(date_test, "\Emission_List");
             end
             
-            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", ASI_plots_directory);
+            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data", ASI_plots_directory);
             
             copy_number = 1;
             
@@ -1998,7 +2008,7 @@ classdef functionsContainer
             elseif Process == "Emission"
             plots_directory = strcat(date_test, "\Emission_List"); 
             end
-            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data", plots_directory,Specific_QD_dir);
+            text_file_pathway = fullfile("c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data", plots_directory,Specific_QD_dir);
             parentDir = text_file_pathway;
             folders = dir(parentDir);
                 folders = folders([folders.isdir]); % Keep only directories

@@ -60,8 +60,8 @@ def create_qd_data_directories():
 
 	date = date_string()
 
-	qd_data_directory_main = r"c:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\QD_Data"
-	qd_data_directory_testing = r"C:\Users\Quantum Dot\Desktop\Bera Yavuz - ANC300 Movement and Images\Scripts For Testing_Debugging\Testing Images"
+	qd_data_directory_main = r"c:\Users\Quantum Dot\Desktop\NWQD_Operation\QD_Data"
+	qd_data_directory_testing = r"C:\Users\Quantum Dot\Desktop\NWQD_Operation\Scripts_&_Debugging_Tools\Testing_Images"
 	qd_data_directory_today = date+"_Test/"
 	qd_data_directory_today_A = date+"_Test/Position_uEYE/"
 	qd_data_directory_today_B = date+"_Test/Spectrometer_ASI/"
